@@ -49,7 +49,7 @@
 - [x] Track mouse movement on the 2D map canvas in `OverviewTab` to find close stage nodes
 - [x] Render the interactive glassmorphic tooltip with a mini SVG elevation profile for the hovered stage
 - [x] Wire up clicking a map node to set the active tab to stages and select the stage
--x] Verify local rendering on Port 5000 and ensure UI elegance
+- [x] Verify local rendering on Port 5000 and ensure UI elegance
 
 ## Phase 7: Fantasy Tab User Auth & Persistent Storage
 - [x] Create portable JSON database file-backed model in `codespace_backend/db.js`
@@ -59,3 +59,12 @@
 - [x] Build login and registration form inputs inside `app.js` under Fantasy Tab
 - [x] Hook frontend buy/sell transfers, budgets, and score history syncing to account
 - [x] Verify local database writes, page sessions, and user transitions
+
+## Phase 8: 3D Mapbox Terrain Route Visualizer
+- [ ] Implement Mapbox GL map initialization hook in `app.js` OverviewTab
+- [ ] Add 3D terrain DEM terrain source, sky, and exaggeration loading
+- [ ] Build GeoJSON route rendering layers for completed, active, and upcoming stages
+- [ ] Render 3D custom markers for Stage Starts, Finishes, and Summit Peaks
+- [ ] Build map controls toolbar: Pitch/Bearing sliders, 3D Horizon Preset, and Fullscreen toggle
+- [ ] Connect stage nodes clicking to trigger map flyTo transitions and open stage details
+- [ ] Validate Mapbox loading, local storage token overrides, and mobile responsive controls

@@ -411,108 +411,189 @@ function OverviewTab({ currentStageId, leaders, riders, setActiveTab, setSelecte
     `;
   };
 
+  const [mapboxToken, setMapboxToken] = useState(() => localStorage.getItem('tdf2026_mapbox_token') || '');
+  const [pitch, setPitch] = useState(50);
+  const [bearing, setBearing] = useState(-20);
+
   useEffect(() => {
-    if (!mapContainer.current) return;
-    
-    let animationFrameId;
-    let pulseRadius = 10;
-    let pulseDirection = 1;
+    if (!mapContainer.current || !mapboxToken) return;
+    if (typeof window.mapboxgl === 'undefined') {
+      console.warn("Mapbox GL JS is not available.");
+      return;
+    }
 
-    const renderMap = () => {
-      if (!mapContainer.current) return;
-      const ctx = mapContainer.current.getContext('2d');
-      if (!ctx) return;
-
-      // Clear Canvas
-      ctx.clearRect(0, 0, mapContainer.current.width, mapContainer.current.height);
-      
-      // Draw Map grid
-      ctx.strokeStyle = 'rgba(120, 120, 120, 0.08)';
-      ctx.lineWidth = 1;
-      for(let i=0; i<800; i+=40) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 400); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(800, i); ctx.stroke();
-      }
-
-      // Coordinates mapping for coordinates inside France (Simulated Projection)
-      const points = getPoints();
-
-      // Draw general route line in light yellow
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 229, 0, 0.25)';
-      ctx.lineWidth = 4;
-      points.forEach((pt, idx) => {
-        if (idx === 0) ctx.moveTo(pt.x, pt.y);
-        else ctx.lineTo(pt.x, pt.y);
+    try {
+      window.mapboxgl.accessToken = mapboxToken;
+      const map = new window.mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/outdoors-v12',
+        center: [2.5, 46.5],
+        zoom: 5,
+        pitch: pitch,
+        bearing: bearing
       });
-      ctx.stroke();
 
-      // Draw completed stages route overlay in solid green
-      if (currentStageId > 0) {
-        ctx.beginPath();
-        ctx.strokeStyle = '#10B981';
-        ctx.lineWidth = 4;
-        points.slice(0, currentStageId).forEach((pt, idx) => {
-          if (idx === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
+      mapRef.current = map;
+
+      // Add navigation controls
+      map.addControl(new window.mapboxgl.NavigationControl(), 'top-left');
+      map.addControl(new window.mapboxgl.FullscreenControl(), 'top-left');
+
+      map.on('style.load', () => {
+        // Add DEM source for terrain extrusion
+        map.addSource('mapbox-dem', {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+          tileSize: 512,
+          maxzoom: 14
         });
-        ctx.stroke();
-      }
+        map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.8 });
 
-      // Draw Stage nodes
-      points.forEach((pt, idx) => {
-        ctx.beginPath();
-        if (pt.stage === currentStageId + 1) {
-          ctx.fillStyle = '#FFE500';
-          ctx.arc(pt.x, pt.y, 8, 0, 2 * Math.PI);
-        } else if (pt.stage <= currentStageId) {
-          ctx.fillStyle = '#10B981';
-          ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
-        } else {
-          ctx.fillStyle = '#9CA3AF';
-          ctx.arc(pt.x, pt.y, 5, 0, 2 * Math.PI);
-        }
-        ctx.fill();
+        // Add visual Sky layer
+        map.addLayer({
+          id: 'sky',
+          type: 'sky',
+          paint: {
+            'sky-type': 'atmosphere',
+            'sky-atmosphere-sun': [0.0, 0.0],
+            'sky-atmosphere-sun-intensity': 15
+          }
+        });
 
-        // Label key stages
-        if (pt.stage === 1 || pt.stage === 4 || pt.stage === 10 || pt.stage === 14 || pt.stage === 21) {
-          ctx.fillStyle = 'var(--text-primary)';
-          ctx.font = 'bold 10px Outfit, sans-serif';
-          ctx.fillText(`St. ${pt.stage}`, pt.x + 10, pt.y + 4);
-        }
+        // Add 3D GeoJSON Route Lines
+        STAGES.forEach(s => {
+          const isCompleted = s.id <= currentStageId;
+          const isActive = s.id === currentStageId + 1;
+          const color = isActive ? '#FFE500' : (isCompleted ? '#10B981' : '#9CA3AF');
+          const opacity = isActive ? 1.0 : (isCompleted ? 0.75 : 0.35);
+          const width = isActive ? 6 : (isCompleted ? 4 : 3);
+
+          map.addSource(`route-${s.id}`, {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              properties: {},
+              geometry: {
+                type: 'LineString',
+                coordinates: [s.mapboxCoords.start, s.mapboxCoords.finish]
+              }
+            }
+          });
+
+          map.addLayer({
+            id: `route-layer-${s.id}`,
+            type: 'line',
+            source: `route-${s.id}`,
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': color,
+              'line-width': width,
+              'line-opacity': opacity
+            }
+          });
+        });
       });
 
-      // Animate active cyclist indicator
-      const activeIdx = Math.max(0, currentStageId - 1);
-      const activePt = points[activeIdx];
-      if (activePt) {
-        pulseRadius += 0.2 * pulseDirection;
-        if (pulseRadius > 18 || pulseRadius < 10) {
-          pulseDirection *= -1;
-        }
+      // Add Markers
+      STAGES.forEach(s => {
+        const isCompleted = s.id <= currentStageId;
+        const isActive = s.id === currentStageId + 1;
 
-        // Pulse ring
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 229, 0, 0.7)';
-        ctx.lineWidth = 2;
-        ctx.arc(activePt.x, activePt.y, pulseRadius, 0, 2 * Math.PI);
-        ctx.stroke();
+        const el = document.createElement('div');
+        el.className = 'stage-marker';
+        el.style.width = isActive ? '14px' : '8px';
+        el.style.height = isActive ? '14px' : '8px';
+        el.style.borderRadius = '50%';
+        el.style.backgroundColor = isActive ? '#FFE500' : (isCompleted ? '#10B981' : '#9CA3AF');
+        el.style.border = '2px solid #FFFFFF';
+        el.style.cursor = 'pointer';
+        el.style.boxShadow = isActive ? '0 0 10px #FFE500' : '0 2px 4px rgba(0,0,0,0.3)';
 
-        // Cyclist symbol offset slightly above node
-        ctx.font = '16px Arial';
-        ctx.fillText('🚴', activePt.x - 8, activePt.y - 12);
+        // Bind interactive tooltips
+        el.addEventListener('mouseenter', () => {
+          setHoveredStage(s);
+          const pos = map.project(s.mapboxCoords.start);
+          setTooltipPos({
+            x: pos.x + 15,
+            y: pos.y - 120
+          });
+        });
+
+        el.addEventListener('mouseleave', () => {
+          setHoveredStage(null);
+        });
+
+        el.addEventListener('mousemove', () => {
+          const pos = map.project(s.mapboxCoords.start);
+          setTooltipPos({
+            x: pos.x + 15,
+            y: pos.y - 120
+          });
+        });
+
+        el.addEventListener('click', () => {
+          setSelectedStageId(s.id);
+          setActiveTab('stages');
+        });
+
+        new window.mapboxgl.Marker(el)
+          .setLngLat(s.mapboxCoords.start)
+          .addTo(map);
+      });
+
+      // Zoom focus to active stage
+      const activeStage = STAGES.find(s => s.id === currentStageId + 1) || STAGES[0];
+      if (activeStage) {
+        map.flyTo({
+          center: activeStage.mapboxCoords.start,
+          zoom: 5.5,
+          pitch: pitch,
+          bearing: bearing,
+          essential: true
+        });
       }
 
-      animationFrameId = requestAnimationFrame(renderMap);
-    };
+      return () => {
+        map.remove();
+      };
+    } catch (err) {
+      console.error("Mapbox init failed:", err);
+    }
+  }, [mapboxToken, currentStageId]);
 
-    renderMap();
+  // Sync range slider settings
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setPitch(pitch);
+    }
+  }, [pitch]);
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+  useEffect(() => {
+    if (mapRef.current) {
+      mapRef.current.setBearing(bearing);
+    }
+  }, [bearing]);
 
-  }, [currentStageId]);
+  const setMapPreset = (p, b) => {
+    setPitch(p);
+    setBearing(b);
+    if (mapRef.current) {
+      mapRef.current.easeTo({
+        pitch: p,
+        bearing: b,
+        duration: 1000
+      });
+    }
+  };
+
+  const handleTokenChange = (e) => {
+    const newToken = e.target.value.trim();
+    setMapboxToken(newToken);
+    localStorage.setItem('tdf2026_mapbox_token', newToken);
+  };
 
   return html`
     <div>
@@ -648,26 +729,77 @@ function OverviewTab({ currentStageId, leaders, riders, setActiveTab, setSelecte
         </div>
 
         <div class="dashboard-card" style="padding: 1rem;">
-          <div class="card-header" style="margin-bottom: 0.5rem; border-bottom: none;">
-            <h3 class="card-title"><i class="lucide-map"></i> 2026 Interactive Stage Route Map</h3>
+          <div class="card-header" style="margin-bottom: 0.5rem; border-bottom: none; display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title"><i class="lucide-map"></i> 2026 Interactive Stage Route Map (3D Terrain)</h3>
           </div>
+          
           <div class="mapbox-container">
-            <canvas 
-              ref=${mapContainer} 
-              class="map-path-canvas" 
-              width="800" 
-              height="400"
-              onMouseMove=${handleMouseMove}
-              onMouseLeave=${handleMouseLeave}
-              onClick=${handleMapClick}
-              style="cursor: ${hoveredStage ? 'pointer' : 'default'};"
-            ></canvas>
-            <div class="map-placeholder-text">
-              <h4>Map Route Visualizer</h4>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                Visualizing GPS tracks of the 21 stages across France. Barcelona 🇪🇸 to Paris 🇫🇷.
-              </p>
+            
+            <div ref=${mapContainer} class="map-viewport"></div>
+            
+            ${!mapboxToken && html`
+              <div class="map-placeholder-text" style="width: 80%; max-width: 500px;">
+                <h4 style="color: var(--jersey-polka); font-family: var(--font-display);"><i class="lucide-alert-triangle"></i> 3D Mapbox Activation Required</h4>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4;">
+                  A public Mapbox access token is required to load the high-fidelity 3D satellite and roads map of Europe. 
+                </p>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.4;">
+                  Please paste a Mapbox access token into the input field at the top-right of this card (e.g. starting with <code>pk.eyJ1...</code>). It will be saved securely in your browser's local cache.
+                </p>
+              </div>
+            `}
+            
+            
+            <div class="mapbox-token-prompt">
+              <span>Token:</span>
+              <input 
+                type="text" 
+                class="mapbox-token-input" 
+                value=${mapboxToken} 
+                onChange=${handleTokenChange} 
+                placeholder="Paste Mapbox Token..." 
+                title="Input your public Mapbox Token"
+              />
             </div>
+
+            
+            <div class="map-controls-toolbar">
+              <div class="map-control-group">
+                <label>Tilt Angle:</label>
+                <input 
+                  type="range" 
+                  class="map-slider" 
+                  min="0" 
+                  max="80" 
+                  value=${pitch} 
+                  onInput=${(e) => setPitch(parseInt(e.target.value))} 
+                />
+                <span style="font-weight: 700; font-size: 0.75rem;">${pitch}°</span>
+              </div>
+              
+              <div class="map-control-group">
+                <label>Pivot Direction:</label>
+                <input 
+                  type="range" 
+                  class="map-slider" 
+                  min="-180" 
+                  max="180" 
+                  value=${bearing} 
+                  onInput=${(e) => setBearing(parseInt(e.target.value))} 
+                />
+                <span style="font-weight: 700; font-size: 0.75rem;">${bearing}°</span>
+              </div>
+
+              <div class="map-control-group" style="gap: 0.25rem;">
+                <button class="btn-map-preset" onClick=${() => setMapPreset(60, -45)}>
+                  3D Alps Preset
+                </button>
+                <button class="btn-map-preset" onClick=${() => setMapPreset(0, 0)}>
+                  Flat 2D View
+                </button>
+              </div>
+            </div>
+
             
             ${hoveredStage && html`
               <div class="map-tooltip visible" style="left: ${tooltipPos.x}px; top: ${tooltipPos.y}px;">
