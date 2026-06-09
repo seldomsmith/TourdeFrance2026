@@ -4,6 +4,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { runDailyScraper } = require('./scraper');
+const { registerUser, loginUser, getUserByToken, updateFantasyState } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,22 @@ function getLiveData() {
   return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 }
 
+// Authentication Middleware
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const token = authHeader.split(' ')[1];
+  const user = getUserByToken(token);
+  if (!user) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+  req.token = token;
+  req.user = user;
+  next();
+};
+
 // REST API Endpoints
 
 // 1. Get current stage and standings
@@ -38,7 +55,53 @@ app.get('/api/results', (req, res) => {
   }
 });
 
-// 2. Trigger scraper for a specific stage recap
+// 2. Auth Endpoints
+app.post('/api/auth/register', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  try {
+    const session = registerUser(username, password);
+    res.json(session);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Username and password are required" });
+  }
+  try {
+    const session = loginUser(username, password);
+    res.json(session);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 3. User Session check
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({ user: req.user });
+});
+
+// 4. Fantasy State Routes
+app.get('/api/fantasy/state', authMiddleware, (req, res) => {
+  res.json({ fantasyState: req.user.fantasyState });
+});
+
+app.post('/api/fantasy/state', authMiddleware, (req, res) => {
+  try {
+    const updatedState = updateFantasyState(req.token, req.body);
+    res.json({ fantasyState: updatedState });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Trigger scraper for a specific stage recap
 app.post('/api/scrape/:stageId', async (req, res) => {
   const { stageId } = req.params;
   try {

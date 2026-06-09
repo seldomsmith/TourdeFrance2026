@@ -13,6 +13,35 @@ function App() {
   
   // Database State
   const [riders, setRiders] = useState(() => initRiderState());
+
+  // User Authentication & Session States
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authToken, setAuthToken] = useState(() => localStorage.getItem('tdf2026_auth_token'));
+
+  useEffect(() => {
+    if (!authToken) {
+      setCurrentUser(null);
+      return;
+    }
+    const fetchMe = async () => {
+      try {
+        const apiHost = window.location.port === '5000' || window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
+        const res = await fetch(`${apiHost}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUser(data.user);
+        } else {
+          setAuthToken(null);
+          localStorage.removeItem('tdf2026_auth_token');
+        }
+      } catch (err) {
+        console.error("Failed to restore session:", err);
+      }
+    };
+    fetchMe();
+  }, [authToken]);
   
   // Filter for GC Chart
   const [selectedGCRiders, setSelectedGCRiders] = useState({});
@@ -184,6 +213,9 @@ function App() {
           <button class="nav-tab ${activeTab === 'visuals' ? 'active' : ''}" onClick=${() => setActiveTab('visuals')}>
             <i class="lucide-trending-up"></i> Visualizations
           </button>
+          <button class="nav-tab ${activeTab === 'fantasy' ? 'active' : ''}" onClick=${() => setActiveTab('fantasy')}>
+            <i class="lucide-trophy"></i> Fantasy TDF
+          </button>
         </nav>
         <div class="nav-controls">
           <button class="theme-toggle-btn" onClick=${() => setTheme(theme === 'light' ? 'dark' : 'light')}>
@@ -238,7 +270,7 @@ function App() {
         `}
 
         
-        ${activeTab === 'overview' && html`<${OverviewTab} currentStageId=${currentStageId} leaders=${leaders} riders=${riders} />`}
+        ${activeTab === 'overview' && html`<${OverviewTab} currentStageId=${currentStageId} leaders=${leaders} riders=${riders} setActiveTab=${setActiveTab} setSelectedStageId=${setSelectedStageId} />`}
         ${activeTab === 'stages' && html`<${StagesTab} currentStageId=${currentStageId} selectedStageId=${selectedStageId} setSelectedStageId=${setSelectedStageId} />`}
         ${activeTab === 'riders' && html`<${RidersTab} riders=${riders} leaders=${leaders} />`}
         ${activeTab === 'breakaway' && html`<${BreakawayTab} riders=${riders} />`}
@@ -249,6 +281,17 @@ function App() {
             selectedGCRiders=${selectedGCRiders} 
             toggleRiderGCFilter=${toggleRiderGCFilter} 
             currentStageId=${currentStageId}
+          />
+        `}
+        ${activeTab === 'fantasy' && html`
+          <${FantasyTab} 
+            currentStageId=${currentStageId} 
+            riders=${riders} 
+            leaders=${leaders} 
+            currentUser=${currentUser}
+            setCurrentUser=${setCurrentUser}
+            authToken=${authToken}
+            setAuthToken=${setAuthToken}
           />
         `}
       </main>
@@ -265,13 +308,108 @@ function App() {
 // ==========================================
 
 // OVERVIEW TAB
-function OverviewTab({ currentStageId, leaders, riders }) {
+function OverviewTab({ currentStageId, leaders, riders, setActiveTab, setSelectedStageId }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
+  const [hoveredStage, setHoveredStage] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   // Stats
   const activeCount = riders.filter(r => r.status === 'Active').length;
   const abandonedCount = riders.filter(r => r.status === 'Abandoned').length;
+
+  const getPoints = () => {
+    return STAGES.map(s => {
+      const x = 150 + (s.mapboxCoords.start[0] + 1) * 75;
+      const y = 350 - (s.mapboxCoords.start[1] - 40) * 35;
+      return { x, y, stage: s.id, name: s.name, stageObj: s };
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!mapContainer.current) return;
+    const rect = mapContainer.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 800;
+    const mouseY = ((e.clientY - rect.top) / rect.height) * 400;
+
+    const points = getPoints();
+    let found = null;
+    for (const pt of points) {
+      const dist = Math.hypot(pt.x - mouseX, pt.y - mouseY);
+      if (dist < 15) {
+        found = pt.stageObj;
+        break;
+      }
+    }
+    setHoveredStage(found);
+    if (found) {
+      // Calculate tooltip position clamped inside bounds
+      const tipWidth = 260;
+      const tipHeight = 150;
+      let xPos = e.clientX - rect.left + 15;
+      let yPos = e.clientY - rect.top - 180;
+      
+      if (xPos + tipWidth > rect.width) {
+        xPos = e.clientX - rect.left - tipWidth - 15;
+      }
+      if (yPos < 0) {
+        yPos = e.clientY - rect.top + 15;
+      }
+      
+      setTooltipPos({ x: xPos, y: yPos });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredStage(null);
+  };
+
+  const handleMapClick = () => {
+    if (hoveredStage) {
+      setSelectedStageId(hoveredStage.id);
+      setActiveTab('stages');
+    }
+  };
+
+  const miniElevationY = (x, type, name) => {
+    const i = (x / 200) * 10;
+    let y = 45;
+    if (type === "Mountain") {
+      y = 45 - Math.sin((i / 10) * Math.PI) * 25 - (Math.floor(i) % 3 === 0 ? 8 : 0);
+    } else if (type === "Hilly") {
+      y = 45 - Math.sin((i / 10) * Math.PI) * 15 - (Math.floor(i) % 2 === 0 ? 4 : 0);
+    } else if (type === "Flat") {
+      y = 45 - Math.sin((i / 10) * Math.PI) * 4;
+    }
+    if (name.toLowerCase().includes("summit") && x > 170) {
+      y = 12;
+    } else if (name.toLowerCase().includes("alpe d'huez") && x > 170) {
+      y = 12;
+    }
+    return y;
+  };
+
+  const drawMiniElevation = (stage) => {
+    let points = [];
+    points.push("M 0 50");
+    for (let x = 0; x <= 200; x += 10) {
+      points.push(`L ${x} ${miniElevationY(x, stage.type, stage.name)}`);
+    }
+    const pathData = points.join(" ");
+    const areaData = pathData + " L 200 50 L 0 50 Z";
+    return html`
+      <svg viewBox="0 0 200 50" style="width: 100%; height: 50px; overflow: visible; margin-top: 0.25rem;">
+        <defs>
+          <linearGradient id="miniElevGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--tdf-yellow)" stop-opacity="0.6" />
+            <stop offset="100%" stop-color="var(--tdf-yellow)" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path d=${areaData} fill="url(#miniElevGrad)" />
+        <path d=${pathData} fill="none" stroke="var(--tdf-yellow)" stroke-width="2" />
+      </svg>
+    `;
+  };
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -297,11 +435,7 @@ function OverviewTab({ currentStageId, leaders, riders }) {
       }
 
       // Coordinates mapping for coordinates inside France (Simulated Projection)
-      const points = STAGES.map(s => {
-        const x = 150 + (s.mapboxCoords.start[0] + 1) * 75;
-        const y = 350 - (s.mapboxCoords.start[1] - 40) * 35;
-        return { x, y, stage: s.id, name: s.name };
-      });
+      const points = getPoints();
 
       // Draw general route line in light yellow
       ctx.beginPath();
@@ -383,65 +517,103 @@ function OverviewTab({ currentStageId, leaders, riders }) {
   return html`
     <div>
       
-      <div class="dashboard-grid">
+      <div class="jerseys-container">
         
-        <div class="dashboard-card" style="border-top: 4px solid var(--jersey-yellow)">
+        <div class="dashboard-card jersey-hero-card yellow-hero" style="--jersey-yellow: 1;">
+          <svg class="jersey-floating-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 40 10 Q 50 20 60 10 L 65 15 Q 50 30 35 15 Z" fill="#111" />
+            <path d="M 35 15 L 20 25 L 25 40 L 32 35 L 32 90 L 68 90 L 68 35 L 75 40 L 80 25 L 65 15 Q 50 25 35 15 Z" fill="var(--jersey-yellow)" stroke="#111" stroke-width="2" />
+            <line x1="50" y1="22" x2="50" y2="90" stroke="#111" stroke-width="1.5" stroke-dasharray="2 2" />
+          </svg>
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot yellow active-holder"></span> Maillot Jaune</span>
             <span class="badge-jersey-holder badge-yellow">GC Leader</span>
           </div>
-          <h3>${leaders.yellow?.name || 'No Leader Yet'}</h3>
-          <p class="mt-2" style="font-size: 0.9rem; color: var(--text-secondary);">
-            Team: <strong>${leaders.yellow?.teamName || '-'}</strong>
-          </p>
-          <p class="mt-4" style="font-weight: 700; color: var(--text-primary);">
-            Time: ${leaders.yellow ? formatGCTime(leaders.yellow.gcTime) : '-'}
-          </p>
+          <h3 style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-display); line-height: 1.2;">${leaders.yellow?.name || 'No Leader Yet'}</h3>
+          <div>
+            <p class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">
+              Team: <strong>${leaders.yellow?.teamName || '-'}</strong>
+            </p>
+            <p class="mt-2" style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">
+              Time: ${leaders.yellow ? formatGCTime(leaders.yellow.gcTime) : '-'}
+            </p>
+          </div>
         </div>
 
         
-        <div class="dashboard-card" style="border-top: 4px solid var(--jersey-green)">
+        <div class="dashboard-card jersey-hero-card green-hero" style="--jersey-green: 1;">
+          <svg class="jersey-floating-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 40 10 Q 50 20 60 10 L 65 15 Q 50 30 35 15 Z" fill="#111" />
+            <path d="M 35 15 L 20 25 L 25 40 L 32 35 L 32 90 L 68 90 L 68 35 L 75 40 L 80 25 L 65 15 Q 50 25 35 15 Z" fill="var(--jersey-green)" stroke="#111" stroke-width="2" />
+            <line x1="50" y1="22" x2="50" y2="90" stroke="#111" stroke-width="1.5" stroke-dasharray="2 2" />
+          </svg>
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot green active-holder"></span> Maillot Vert</span>
             <span class="badge-jersey-holder badge-green">Points</span>
           </div>
-          <h3>${leaders.green?.name || 'No Leader Yet'}</h3>
-          <p class="mt-2" style="font-size: 0.9rem; color: var(--text-secondary);">
-            Team: <strong>${leaders.green?.teamName || '-'}</strong>
-          </p>
-          <p class="mt-4" style="font-weight: 700; color: var(--jersey-green);">
-            Points: ${leaders.green?.points || 0} pts
-          </p>
+          <h3 style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-display); line-height: 1.2;">${leaders.green?.name || 'No Leader Yet'}</h3>
+          <div>
+            <p class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">
+              Team: <strong>${leaders.green?.teamName || '-'}</strong>
+            </p>
+            <p class="mt-2" style="font-size: 1.1rem; font-weight: 800; color: var(--jersey-green);">
+              Points: ${leaders.green?.points || 0} pts
+            </p>
+          </div>
         </div>
 
         
-        <div class="dashboard-card" style="border-top: 4px solid var(--jersey-polka)">
+        <div class="dashboard-card jersey-hero-card polka-hero" style="--jersey-polka: 1;">
+          <svg class="jersey-floating-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 40 10 Q 50 20 60 10 L 65 15 Q 50 30 35 15 Z" fill="#111" />
+            <path d="M 35 15 L 20 25 L 25 40 L 32 35 L 32 90 L 68 90 L 68 35 L 75 40 L 80 25 L 65 15 Q 50 25 35 15 Z" fill="#FFFFFF" stroke="#111" stroke-width="2" />
+            <circle cx="35" cy="30" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="50" cy="30" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="65" cy="30" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="42" cy="45" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="58" cy="45" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="35" cy="60" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="50" cy="60" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="65" cy="60" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="42" cy="75" r="3.5" fill="var(--jersey-polka)" />
+            <circle cx="58" cy="75" r="3.5" fill="var(--jersey-polka)" />
+            <line x1="50" y1="22" x2="50" y2="90" stroke="#111" stroke-width="1.5" stroke-dasharray="2 2" />
+          </svg>
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot polka active-holder"></span> Maillot à Pois</span>
             <span class="badge-jersey-holder badge-polka">Mountains</span>
           </div>
-          <h3>${leaders.polka?.name || 'No Leader Yet'}</h3>
-          <p class="mt-2" style="font-size: 0.9rem; color: var(--text-secondary);">
-            Team: <strong>${leaders.polka?.teamName || '-'}</strong>
-          </p>
-          <p class="mt-4" style="font-weight: 700; color: var(--jersey-polka);">
-            Points: ${leaders.polka?.mountainPoints || 0} pts
-          </p>
+          <h3 style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-display); line-height: 1.2;">${leaders.polka?.name || 'No Leader Yet'}</h3>
+          <div>
+            <p class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">
+              Team: <strong>${leaders.polka?.teamName || '-'}</strong>
+            </p>
+            <p class="mt-2" style="font-size: 1.1rem; font-weight: 800; color: var(--jersey-polka);">
+              Points: ${leaders.polka?.mountainPoints || 0} pts
+            </p>
+          </div>
         </div>
 
         
-        <div class="dashboard-card" style="border-top: 4px solid var(--jersey-white-border)">
+        <div class="dashboard-card jersey-hero-card white-hero">
+          <svg class="jersey-floating-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 40 10 Q 50 20 60 10 L 65 15 Q 50 30 35 15 Z" fill="#111" />
+            <path d="M 35 15 L 20 25 L 25 40 L 32 35 L 32 90 L 68 90 L 68 35 L 75 40 L 80 25 L 65 15 Q 50 25 35 15 Z" fill="#FFFFFF" stroke="var(--jersey-white-border)" stroke-width="2" />
+            <line x1="50" y1="22" x2="50" y2="90" stroke="#ccc" stroke-width="1.5" stroke-dasharray="2 2" />
+          </svg>
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot white active-holder"></span> Maillot Blanc</span>
             <span class="badge-jersey-holder badge-white">Young Rider</span>
           </div>
-          <h3>${leaders.white?.name || 'No Leader Yet'}</h3>
-          <p class="mt-2" style="font-size: 0.9rem; color: var(--text-secondary);">
-            Team: <strong>${leaders.white?.teamName || '-'}</strong>
-          </p>
-          <p class="mt-4" style="font-weight: 700; color: var(--text-primary);">
-            Time: ${leaders.white ? formatGCTime(leaders.white.gcTime) : '-'}
-          </p>
+          <h3 style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-display); line-height: 1.2;">${leaders.white?.name || 'No Leader Yet'}</h3>
+          <div>
+            <p class="mt-2" style="font-size: 0.85rem; color: var(--text-secondary);">
+              Team: <strong>${leaders.white?.teamName || '-'}</strong>
+            </p>
+            <p class="mt-2" style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">
+              Time: ${leaders.white ? formatGCTime(leaders.white.gcTime) : '-'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -480,13 +652,38 @@ function OverviewTab({ currentStageId, leaders, riders }) {
             <h3 class="card-title"><i class="lucide-map"></i> 2026 Interactive Stage Route Map</h3>
           </div>
           <div class="mapbox-container">
-            <canvas ref=${mapContainer} class="map-path-canvas" width="800" height="400"></canvas>
+            <canvas 
+              ref=${mapContainer} 
+              class="map-path-canvas" 
+              width="800" 
+              height="400"
+              onMouseMove=${handleMouseMove}
+              onMouseLeave=${handleMouseLeave}
+              onClick=${handleMapClick}
+              style="cursor: ${hoveredStage ? 'pointer' : 'default'};"
+            ></canvas>
             <div class="map-placeholder-text">
               <h4>Map Route Visualizer</h4>
               <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
                 Visualizing GPS tracks of the 21 stages across France. Barcelona 🇪🇸 to Paris 🇫🇷.
               </p>
             </div>
+            
+            ${hoveredStage && html`
+              <div class="map-tooltip visible" style="left: ${tooltipPos.x}px; top: ${tooltipPos.y}px;">
+                <div style="font-weight: 800; font-size: 0.85rem; font-family: var(--font-display);">
+                  Stage ${hoveredStage.id}: ${hoveredStage.name}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>Type: <strong>${hoveredStage.type}</strong></span>
+                  <span>Dist: <strong>${hoveredStage.distance} km</strong></span>
+                </div>
+                ${drawMiniElevation(hoveredStage)}
+                <div style="font-size: 0.7rem; color: var(--tdf-yellow); font-weight: 600; text-align: center; margin-top: 0.25rem;">
+                  Click to view full Stage Details
+                </div>
+              </div>
+            `}
           </div>
         </div>
       </div>
@@ -2330,6 +2527,515 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
             })()}
           </div>
         `}
+      </div>
+    </div>
+  `;
+}
+
+// ==========================================
+// FANTASY TAB COMPONENT
+// ==========================================
+
+const getRiderPrice = (name) => {
+  const prices = {
+    "Tadej Pogačar": 40.0,
+    "Jonas Vingegaard": 38.0,
+    "Remco Evenepoel": 32.0,
+    "Primož Roglič": 30.0,
+    "Matteo Jorgenson": 22.0,
+    "Richard Carapaz": 20.0,
+    "Jasper Philipsen": 18.0,
+    "Mads Pedersen": 16.0,
+    "Mathieu van der Poel": 15.0,
+    "Sepp Kuss": 12.0,
+    "Adam Yates": 12.0,
+    "Tom Pidcock": 10.0,
+    "Ben Healy": 9.0
+  };
+  return prices[name] || 5.0;
+};
+
+const getRiderTier = (name) => {
+  const price = getRiderPrice(name);
+  if (price >= 30.0) return "Tier 1: Superstar";
+  if (price >= 15.0) return "Tier 2: Contender";
+  if (price >= 9.0) return "Tier 3: Specialist";
+  return "Tier 4: Domestique";
+};
+
+const calculateFantasyPointsForStage = (riderName, stageId, riders, leaders) => {
+  const rider = riders.find(r => r.name === riderName);
+  if (!rider) return 0;
+
+  if (rider.status === 'Abandoned' && rider.abandonStage === stageId) {
+    return -20;
+  }
+  if (rider.status === 'Abandoned' && rider.abandonStage < stageId) {
+    return 0;
+  }
+
+  let points = 0;
+
+  // 1. Stage Placements
+  const activeRiders = riders.filter(r => r.status === 'Active' || r.abandonStage === stageId);
+  const stageResults = [...activeRiders].sort((a, b) => {
+    const gapA = a.stageGapsHistory ? (a.stageGapsHistory[stageId] || 0) : 0;
+    const gapB = b.stageGapsHistory ? (b.stageGapsHistory[stageId] || 0) : 0;
+    return gapA - gapB;
+  });
+
+  const rank = stageResults.findIndex(r => r.name === riderName) + 1;
+  if (rank === 1) points += 50;
+  else if (rank === 2) points += 35;
+  else if (rank === 3) points += 25;
+  else if (rank === 4) points += 18;
+  else if (rank === 5) points += 15;
+  else if (rank >= 6 && rank <= 10) points += 10;
+  else if (rank >= 11 && rank <= 15) points += 5;
+
+  // 2. Jersey Holders
+  if (leaders.yellow?.name === riderName) points += 15;
+  if (leaders.green?.name === riderName) points += 10;
+  if (leaders.polka?.name === riderName) points += 10;
+  if (leaders.white?.name === riderName) points += 8;
+
+  // 3. Breakaway specialists
+  if (rider.type === 'breakaway' && rank <= 20) {
+    points += 5;
+  }
+
+  return points;
+};
+
+function FantasyTab({ currentStageId, riders, leaders, currentUser, setCurrentUser, authToken, setAuthToken }) {
+  const [isRegister, setIsRegister] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+
+  // Market Filters
+  const [marketSearch, setMarketSearch] = useState('');
+  const [marketClass, setMarketClass] = useState('all');
+
+  const apiHost = window.location.port === '5000' || window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
+
+  // Listen to stage updates and compute score history
+  useEffect(() => {
+    if (!currentUser || currentStageId === 0) return;
+
+    const history = currentUser.fantasyState.pointsHistory || [];
+    if (history.length < currentStageId) {
+      let stagePoints = 0;
+      currentUser.fantasyState.roster.forEach(riderName => {
+        stagePoints += calculateFantasyPointsForStage(riderName, currentStageId, riders, leaders);
+      });
+
+      const updatedHistory = [...history];
+      updatedHistory[currentStageId - 1] = stagePoints;
+      const newTotal = updatedHistory.reduce((sum, p) => sum + (p || 0), 0);
+
+      const updatedState = {
+        ...currentUser.fantasyState,
+        pointsHistory: updatedHistory,
+        totalPoints: newTotal
+      };
+
+      setCurrentUser(prev => ({
+        ...prev,
+        fantasyState: updatedState
+      }));
+
+      // Sync to backend
+      fetch(`${apiHost}/api/fantasy/state`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(updatedState)
+      }).catch(err => console.error("Roster score sync failed:", err));
+    }
+  }, [currentStageId, currentUser?.username]);
+
+  // Auth Submit Handlers
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    if (!username || !password) {
+      setFormError('Please fill in all fields');
+      return;
+    }
+
+    const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+    try {
+      const res = await fetch(`${apiHost}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      localStorage.setItem('tdf2026_auth_token', data.token);
+      setAuthToken(data.token);
+      setCurrentUser(data.user);
+      setFormSuccess(isRegister ? 'Account created successfully!' : 'Logged in successfully!');
+    } catch (err) {
+      setFormError(err.message);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('tdf2026_auth_token');
+    setAuthToken(null);
+    setCurrentUser(null);
+  };
+
+  // Sync state wrapper
+  const syncState = async (updatedState) => {
+    try {
+      const res = await fetch(`${apiHost}/api/fantasy/state`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(updatedState)
+      });
+      if (!res.ok) throw new Error("Sync failed");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Buy Rider Transaction
+  const buyRider = (riderName) => {
+    if (!currentUser) return;
+    const roster = currentUser.fantasyState.roster || [];
+    const budget = currentUser.fantasyState.budget;
+
+    if (roster.includes(riderName)) return;
+    if (roster.length >= 6) {
+      alert("Roster is full (max 6 riders)");
+      return;
+    }
+
+    const price = getRiderPrice(riderName);
+    if (budget < price) {
+      alert("Insufficient budget credits");
+      return;
+    }
+
+    const updatedRoster = [...roster, riderName];
+    const updatedBudget = Math.round((budget - price) * 10) / 10;
+
+    const updatedState = {
+      ...currentUser.fantasyState,
+      roster: updatedRoster,
+      budget: updatedBudget
+    };
+
+    setCurrentUser({
+      ...currentUser,
+      fantasyState: updatedState
+    });
+
+    syncState(updatedState);
+  };
+
+  // Sell Rider Transaction
+  const sellRider = (riderName) => {
+    if (!currentUser) return;
+    const roster = currentUser.fantasyState.roster || [];
+    const budget = currentUser.fantasyState.budget;
+
+    if (!roster.includes(riderName)) return;
+
+    const rider = riders.find(r => r.name === riderName);
+    const refundPrice = (rider && rider.status === 'Abandoned') ? 0 : getRiderPrice(riderName);
+
+    const updatedRoster = roster.filter(name => name !== riderName);
+    const updatedBudget = Math.round((budget + refundPrice) * 10) / 10;
+
+    const updatedState = {
+      ...currentUser.fantasyState,
+      roster: updatedRoster,
+      budget: updatedBudget
+    };
+
+    setCurrentUser({
+      ...currentUser,
+      fantasyState: updatedState
+    });
+
+    syncState(updatedState);
+  };
+
+  // Filter riders for the Transfer portal market
+  const marketRiders = useMemo(() => {
+    return riders.filter(r => {
+      const matchSearch = r.name.toLowerCase().includes(marketSearch.toLowerCase()) || 
+                          r.teamName.toLowerCase().includes(marketSearch.toLowerCase());
+      const price = getRiderPrice(r.name);
+      let matchClass = true;
+      if (marketClass === 't1') matchClass = price >= 30.0;
+      else if (marketClass === 't2') matchClass = price >= 15.0 && price < 30.0;
+      else if (marketClass === 't3') matchClass = price >= 9.0 && price < 15.0;
+      else if (marketClass === 't4') matchClass = price < 9.0;
+
+      return matchSearch && matchClass;
+    }).sort((a, b) => getRiderPrice(b.name) - getRiderPrice(a.name));
+  }, [riders, marketSearch, marketClass]);
+
+  // If user is NOT logged in, show auth form overlay
+  if (!currentUser) {
+    return html`
+      <div class="auth-overlay">
+        <div class="dashboard-card auth-card">
+          <h2 style="text-align: center; margin-bottom: 1.5rem; font-family: var(--font-display);">
+            ${isRegister ? 'Register Directeur Account' : 'Directeur Login'}
+          </h2>
+          
+          ${formError && html`<div style="color: var(--jersey-polka); background: rgba(239, 68, 68, 0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-size: 0.85rem; font-weight: 500;">${formError}</div>`}
+          ${formSuccess && html`<div style="color: var(--jersey-green); background: rgba(16, 185, 129, 0.1); padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; text-align: center; font-size: 0.85rem; font-weight: 500;">${formSuccess}</div>`}
+
+          <form onSubmit=${handleAuthSubmit}>
+            <div class="auth-form-group">
+              <label>Username</label>
+              <input type="text" class="auth-input" value=${username} onInput=${(e) => setUsername(e.target.value)} placeholder="e.g. DirecteurTadej" required />
+            </div>
+            
+            <div class="auth-form-group">
+              <label>Password</label>
+              <input type="password" class="auth-input" value=${password} onInput=${(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+            </div>
+            
+            <button type="submit" class="btn-auth-submit">
+              ${isRegister ? 'Create Account' : 'Log In'}
+            </button>
+          </form>
+
+          <p class="auth-toggle-text">
+            ${isRegister ? 'Already have an account?' : "Don't have an account?"}
+            <span class="auth-toggle-link" onClick=${() => { setIsRegister(!isRegister); setFormError(''); setFormSuccess(''); }}>
+              ${isRegister ? 'Log In' : 'Sign Up'}
+            </span>
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Logged-in state renders Directeur Cabin Dashboard
+  const rosterList = currentUser.fantasyState.roster || [];
+  const currentBudget = currentUser.fantasyState.budget;
+  const totalPoints = currentUser.fantasyState.totalPoints;
+  const historyList = currentUser.fantasyState.pointsHistory || [];
+
+  return html`
+    <div>
+      
+      <div class="auth-user-badge">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="lucide-user" style="color: var(--tdf-yellow);"></i>
+          <span style="font-weight: 700;">Directeur: @${currentUser.username}</span>
+        </div>
+        <button class="btn-logout" onClick=${handleLogout}>
+          <i class="lucide-log-out"></i> Logout
+        </button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="dashboard-card" style="border-top: 4px solid var(--tdf-yellow);">
+            <div class="card-header">
+              <h3 class="card-title"><i class="lucide-trophy"></i> Roster Dashboard</h3>
+              <span class="badge-jersey-holder badge-yellow">${rosterList.length} / 6 Riders</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+              <div style="background-color: var(--bg-tertiary); padding: 1rem; border-radius: 8px; text-align: center;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Roster Value</span>
+                <h3 style="font-size: 1.5rem; font-weight: 800;">€${(Math.round((100.0 - currentBudget) * 10) / 10).toFixed(1)}M</h3>
+              </div>
+              <div style="background-color: var(--bg-tertiary); padding: 1rem; border-radius: 8px; text-align: center;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Credits Remaining</span>
+                <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--jersey-green);">€${currentBudget.toFixed(1)}M</h3>
+              </div>
+              <div style="background-color: var(--bg-tertiary); padding: 1rem; border-radius: 8px; text-align: center;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Total Score</span>
+                <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--tdf-yellow-hover);">${totalPoints} pts</h3>
+              </div>
+            </div>
+
+            <h4 style="margin-top: 1.5rem; margin-bottom: 0.75rem; font-family: var(--font-display);">Roster Line-up</h4>
+            ${rosterList.length === 0 ? html`
+              <div style="text-align: center; padding: 2rem; color: var(--text-secondary); border: 2px dashed var(--border-color); border-radius: 8px; margin-top: 0.5rem;">
+                <i class="lucide-users" style="font-size: 2rem; opacity: 0.5; margin-bottom: 0.5rem; display: block;"></i>
+                No riders drafted yet. Use the transfer portal below to build your roster!
+              </div>
+            ` : html`
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;">
+                ${rosterList.map(name => {
+                  const riderObj = riders.find(r => r.name === name);
+                  const price = getRiderPrice(name);
+                  const tier = getRiderTier(name);
+                  const isDNF = riderObj && riderObj.status === 'Abandoned';
+
+                  return html`
+                    <div class="dashboard-card" style="padding: 1rem; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(8px); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; ${isDNF ? 'opacity: 0.6; border-color: var(--jersey-polka);' : ''}">
+                      <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 0.75rem;">
+                          <span style="font-weight: 600; color: var(--text-secondary);">${tier}</span>
+                          <span style="font-weight: 700; color: var(--jersey-green);">€${price.toFixed(1)}M</span>
+                        </div>
+                        <h4 style="margin-top: 0.5rem; font-size: 1rem; font-family: var(--font-display);">${name}</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                          ${riderObj?.teamName || '-'}
+                        </p>
+                        ${isDNF && html`
+                          <div style="color: var(--jersey-polka); font-size: 0.7rem; font-weight: 700; margin-top: 0.25rem;">
+                            ⚠️ DNF (Stage ${riderObj.abandonStage}) - Value dropped to €0.0M
+                          </div>
+                        `}
+                      </div>
+                      
+                      <button 
+                        class="btn-logout" 
+                        style="width: 100%; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;" 
+                        onClick=${() => sellRider(name)}
+                      >
+                        <i class="lucide-trash-2"></i> Sell Rider
+                      </button>
+                    </div>
+                  `;
+                })}
+              </div>
+            `}
+          </div>
+
+          
+          <div class="dashboard-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="lucide-shuffle"></i> Transfer Portal (Market List)</h3>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <div class="search-container" style="margin-bottom: 0; flex: 1;">
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  value=${marketSearch} 
+                  onInput=${(e) => setMarketSearch(e.target.value)} 
+                  placeholder="Filter by Rider or Team..." 
+                />
+                <i class="lucide-search search-icon"></i>
+              </div>
+              
+              <select 
+                class="search-input" 
+                style="max-width: 200px; padding-left: 1rem;" 
+                value=${marketClass} 
+                onChange=${(e) => setMarketClass(e.target.value)}
+              >
+                <option value="all">All Tiers</option>
+                <option value="t1">Tier 1: Superstar (>= €30M)</option>
+                <option value="t2">Tier 2: Contenders (>= €15M)</option>
+                <option value="t3">Tier 3: Specialists (>= €9M)</option>
+                <option value="t4">Tier 4: Domestiques (€5.0M)</option>
+              </select>
+            </div>
+
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead>
+                  <tr style="background-color: var(--bg-tertiary); border-bottom: 1px solid var(--border-color);">
+                    <th style="padding: 0.75rem 1rem;">Rider</th>
+                    <th style="padding: 0.75rem 1rem;">Team</th>
+                    <th style="padding: 0.75rem 1rem;">Tier / Spec</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Cost</th>
+                    <th style="padding: 0.75rem 1rem; text-align: center;">Status</th>
+                    <th style="padding: 0.75rem 1rem; text-align: center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${marketRiders.map((r, idx) => {
+                    const price = getRiderPrice(r.name);
+                    const tier = getRiderTier(r.name);
+                    const isDrafted = rosterList.includes(r.name);
+                    const isFull = rosterList.length >= 6;
+                    const canAfford = currentBudget >= price;
+                    const isDNF = r.status === 'Abandoned';
+
+                    return html`
+                      <tr style="border-bottom: 1px solid var(--border-color); background-color: ${idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'};">
+                        <td style="padding: 0.75rem 1rem; font-weight: 600;">${r.name}</td>
+                        <td style="padding: 0.75rem 1rem; color: var(--text-secondary);">${r.teamName}</td>
+                        <td style="padding: 0.75rem 1rem;">
+                          <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">${r.type || 'flat'}</span>
+                          <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;">${tier}</span>
+                        </td>
+                        <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 700; color: var(--jersey-green);">€${price.toFixed(1)}M</td>
+                        <td style="padding: 0.75rem 1rem; text-align: center;">
+                          <span class="rider-status ${isDNF ? 'status-abandoned' : 'status-active'}">
+                            ${r.status}
+                          </span>
+                        </td>
+                        <td style="padding: 0.75rem 1rem; text-align: center;">
+                          ${isDrafted ? html`
+                            <button class="btn-logout" disabled style="background-color: transparent; border-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed;">Drafted</button>
+                          ` : html`
+                            <button 
+                              class="btn-auth-submit" 
+                              style="font-size: 0.75rem; padding: 0.3rem 0.6rem; margin-top: 0;"
+                              disabled=${isFull || !canAfford || isDNF}
+                              onClick=${() => buyRider(r.name)}
+                            >
+                              Draft
+                            </button>
+                          `}
+                        </td>
+                      </tr>
+                    `;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="dashboard-card" style="border-top: 4px solid var(--jersey-green);">
+            <div class="card-header">
+              <h3 class="card-title"><i class="lucide-history"></i> Stage Points Recap</h3>
+            </div>
+            
+            ${historyList.length === 0 ? html`
+              <p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 1.5rem;">
+                No completed stages simulated yet. Roster scores will accumulate as you advance stages in the Control Panel!
+              </p>
+            ` : html`
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 520px; overflow-y: auto; padding-right: 0.25rem;">
+                ${historyList.map((pts, idx) => html`
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background-color: var(--bg-tertiary); border-radius: 6px;">
+                    <span style="font-size: 0.85rem; font-weight: 600;">Stage ${idx + 1} Points:</span>
+                    <strong style="color: var(--jersey-green); font-size: 0.95rem;">+${pts || 0} pts</strong>
+                  </div>
+                `)}
+              </div>
+            `}
+          </div>
+        </div>
+
       </div>
     </div>
   `;
