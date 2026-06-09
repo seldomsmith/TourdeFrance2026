@@ -162,7 +162,7 @@ function App() {
 
   return html`
     <div class="app-container">
-      <!-- Header -->
+      
       <header class="header">
         <div class="logo-container">
           <div class="logo-badge">TDF</div>
@@ -192,9 +192,9 @@ function App() {
         </div>
       </header>
 
-      <!-- Main Body -->
+      
       <main class="main-content">
-        <!-- Simulator Panel -->
+        
         <div class="simulator-banner">
           <div class="sim-info">
             <h2>Stage Control Panel ${currentStageId > 0 ? html`<span class="sim-badge">Race Active</span>` : html`<span class="sim-badge">Pre-Race</span>`}</h2>
@@ -207,7 +207,7 @@ function App() {
             </p>
           </div>
           <div class="sim-controls" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-            <!-- Live Sync Toggle -->
+            
             <button 
               class="btn-reset" 
               style=${liveSync ? "background-color: var(--jersey-green); border-color: var(--jersey-green); color: #FFFFFF;" : ""}
@@ -229,7 +229,7 @@ function App() {
           </div>
         </div>
 
-        <!-- Sync Server Error Banner -->
+        
         ${liveSync && syncError && html`
           <div style="background-color: rgba(239, 68, 68, 0.15); border: 1px solid var(--jersey-polka); border-radius: 8px; color: var(--jersey-polka); padding: 0.75rem 1.25rem; margin-bottom: 2rem; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
             <i class="lucide-alert-triangle"></i>
@@ -237,7 +237,7 @@ function App() {
           </div>
         `}
 
-        <!-- Tab Router -->
+        
         ${activeTab === 'overview' && html`<${OverviewTab} currentStageId=${currentStageId} leaders=${leaders} riders=${riders} />`}
         ${activeTab === 'stages' && html`<${StagesTab} currentStageId=${currentStageId} selectedStageId=${selectedStageId} setSelectedStageId=${setSelectedStageId} />`}
         ${activeTab === 'riders' && html`<${RidersTab} riders=${riders} leaders=${leaders} />`}
@@ -382,9 +382,9 @@ function OverviewTab({ currentStageId, leaders, riders }) {
 
   return html`
     <div>
-      <!-- Cards Panel for Leaders -->
+      
       <div class="dashboard-grid">
-        <!-- Yellow Jersey Card -->
+        
         <div class="dashboard-card" style="border-top: 4px solid var(--jersey-yellow)">
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot yellow active-holder"></span> Maillot Jaune</span>
@@ -399,7 +399,7 @@ function OverviewTab({ currentStageId, leaders, riders }) {
           </p>
         </div>
 
-        <!-- Green Jersey Card -->
+        
         <div class="dashboard-card" style="border-top: 4px solid var(--jersey-green)">
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot green active-holder"></span> Maillot Vert</span>
@@ -414,7 +414,7 @@ function OverviewTab({ currentStageId, leaders, riders }) {
           </p>
         </div>
 
-        <!-- Polka Dot Jersey Card -->
+        
         <div class="dashboard-card" style="border-top: 4px solid var(--jersey-polka)">
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot polka active-holder"></span> Maillot à Pois</span>
@@ -429,7 +429,7 @@ function OverviewTab({ currentStageId, leaders, riders }) {
           </p>
         </div>
 
-        <!-- White Jersey Card -->
+        
         <div class="dashboard-card" style="border-top: 4px solid var(--jersey-white-border)">
           <div class="card-header">
             <span class="card-title"><span class="jersey-dot white active-holder"></span> Maillot Blanc</span>
@@ -445,7 +445,7 @@ function OverviewTab({ currentStageId, leaders, riders }) {
         </div>
       </div>
 
-      <!-- Mapbox Representation and Overview stats -->
+      
       <div class="stages-wrapper">
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           <div class="dashboard-card">
@@ -525,7 +525,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
 
   return html`
     <div class="stages-wrapper">
-      <!-- Left Column (Stage List) -->
+      
       <div class="stages-list">
         <h3 class="mb-4" style="padding: 0 0.5rem;">21 Stages</h3>
         ${STAGES.map(s => {
@@ -560,7 +560,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
         })}
       </div>
 
-      <!-- Right Column (Profile Detail) -->
+      
       <div class="stage-profile-detail">
         <div>
           <h2>Stage ${selectedStage.id}: ${selectedStage.name}</h2>
@@ -584,12 +584,12 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
           </div>
         </div>
 
-        <!-- Custom SVG Elevation Profile -->
+        
         <div>
           <h3>Elevation Profile</h3>
           <div class="elevation-chart-container" style="display: flex; align-items: center; justify-content: center; padding: 1rem;">
             <svg viewBox="0 0 500 150" style="width: 100%; height: 100%; overflow: visible;">
-              <!-- Background gradient -->
+              
               <defs>
                 <linearGradient id="elevationGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="var(--tdf-yellow)" stop-opacity="0.5" />
@@ -597,7 +597,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                 </linearGradient>
               </defs>
               
-              <!-- Draw elevation path -->
+              
               ${(() => {
                 let points = [];
                 points.push("M 0 130");
@@ -615,7 +615,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                 `;
               })()}
 
-              <!-- Draw Climb Flags -->
+              
               ${selectedStage.climbs.map((climb, idx) => {
                 const totalClimbs = selectedStage.climbs.length;
                 // Distribute climbs across middle X axis (e.g. 20% to 90%)
@@ -637,7 +637,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                     onMouseLeave=${() => setHoveredClimbIndex(null)}
                     style="cursor: pointer;"
                   >
-                    <!-- Flagpole line -->
+                    
                     <line 
                       x1=${x} 
                       y1=${pathY} 
@@ -647,7 +647,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                       stroke-width=${isHovered ? 2 : 1} 
                     />
                     
-                    <!-- Flag dot/label -->
+                    
                     <circle 
                       cx=${x} 
                       cy=${flagTopY} 
@@ -667,7 +667,7 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                       ${climb.category.toUpperCase()}
                     </text>
 
-                    <!-- Custom Tooltip directly inside SVG -->
+                    
                     ${isHovered && html`
                       <g transform="translate(${x - 60}, ${flagTopY - 40})">
                         <rect width="120" height="32" rx="4" fill="var(--tdf-charcoal)" opacity="0.95" />
@@ -683,13 +683,13 @@ function StagesTab({ currentStageId, selectedStageId, setSelectedStageId }) {
                 `;
               })}
 
-              <!-- Grid bottom line -->
+              
               <line x1="0" y1="130" x2="500" y2="130" stroke="var(--border-color)" stroke-width="2" />
             </svg>
           </div>
         </div>
 
-        <!-- Climbs breakdown -->
+        
         <div>
           <h3 class="mb-2">Key Mountain Passes (${selectedStage.climbs.length})</h3>
           <div class="climbs-grid">
@@ -776,7 +776,7 @@ function RidersTab({ riders, leaders }) {
         Search for riders, teams, nationalities, or specialties. Click on any rider to view their stage-by-stage placing history modal!
       </p>
 
-      <!-- Search input container -->
+      
       <div class="search-container">
         <i class="lucide-search search-icon"></i>
         <input 
@@ -803,7 +803,7 @@ function RidersTab({ riders, leaders }) {
                     ${rider.status === 'Active' ? 'Active' : 'DNF'}
                   </span>
 
-                  <!-- Hover Tooltip -->
+                  
                   <div class="rider-tooltip">
                     <div class="tooltip-header">
                       <span>${rider.name}</span>
@@ -850,7 +850,7 @@ function RidersTab({ riders, leaders }) {
         `)}
       </div>
 
-      <!-- Detail Modal Overlay -->
+      
       ${selectedRider && html`
         <div class="modal-overlay" onClick=${() => setSelectedRider(null)}>
           <div class="modal-content" onClick=${(e) => e.stopPropagation()}>
@@ -871,7 +871,7 @@ function RidersTab({ riders, leaders }) {
             
             <div class="modal-body">
               <div class="modal-grid">
-                <!-- Biography Details -->
+                
                 <div>
                   <h3 class="mb-4"><i class="lucide-user"></i> Rider Profile</h3>
                   <div style="display: flex; flex-direction: column; gap: 0.75rem; background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--tdf-yellow);">
@@ -920,7 +920,7 @@ function RidersTab({ riders, leaders }) {
                   </div>
                 </div>
 
-                <!-- GC Ranking progression plot -->
+                
                 <div>
                   <h3 class="mb-2"><i class="lucide-trending-up"></i> GC Standing Progress</h3>
                   <p class="mb-4" style="font-size: 0.8rem; color: var(--text-secondary);">Position over stages (lower is better).</p>
@@ -947,18 +947,18 @@ function RidersTab({ riders, leaders }) {
 
                     return html`
                       <svg viewBox="0 0 280 150" style="border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-tertiary); width: 100%;">
-                        <!-- Horizontal ticks -->
+                        
                         <line x1="20" y1="15" x2="260" y2="15" stroke="var(--border-color)" stroke-dasharray="2,2" />
                         <line x1="20" y1="120" x2="260" y2="120" stroke="var(--border-color)" stroke-dasharray="2,2" />
                         
-                        <!-- Axis Labels -->
+                        
                         <text x="25" y="27" fill="var(--text-secondary)" font-size="8">Rank 1</text>
                         <text x="25" y="115" fill="var(--text-secondary)" font-size="8">Rank ${maxRank}</text>
 
-                        <!-- Plot path -->
+                        
                         <path d="M ${coords.join(' L ')}" fill="none" stroke="var(--tdf-yellow)" stroke-width="2.5" />
                         
-                        <!-- Vertex dots -->
+                        
                         ${coords.map((c, idx) => {
                           const [x, y] = c.split(',');
                           return html`
@@ -989,7 +989,7 @@ function RidersTab({ riders, leaders }) {
           </div>
         </div>
       `}
-      <!-- Chronological DNF Wall -->
+      
       <div class="dashboard-card" style="margin-top: 3rem; border-top: 4px solid var(--jersey-polka)">
         <div class="card-header" style="border-bottom: none; margin-bottom: 0.5rem;">
           <h3 class="card-title" style="color: var(--jersey-polka);"><i class="lucide-heart-off"></i> Chronological DNF Wall (Abandonments)</h3>
@@ -1035,7 +1035,7 @@ function BreakawayTab({ riders }) {
 
   return html`
     <div class="breakaway-grid">
-      <!-- Most Combative Leaderboard -->
+      
       <div class="dashboard-card">
         <h3>Most Combative Riders</h3>
         <p class="mb-4" style="color: var(--text-secondary); font-size: 0.85rem;">
@@ -1066,7 +1066,7 @@ function BreakawayTab({ riders }) {
         </div>
       </div>
 
-      <!-- Breakaway Stages analysis -->
+      
       <div class="dashboard-card">
         <h3>Breakaway Friendly Stages</h3>
         <p class="mb-4" style="color: var(--text-secondary); font-size: 0.85rem;">
@@ -1253,26 +1253,26 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </div>
             </div>
 
-            <!-- SVG Time Gaps Graph -->
+            
             <div style="position: relative;">
               <svg viewBox="0 0 600 350" class="svg-graph">
-                <!-- Grid lines -->
+                
                 <line x1="50" y1="20" x2="50" y2="300" class="graph-axis" />
                 <line x1="50" y1="300" x2="580" y2="300" class="graph-axis" />
                 
-                <!-- Horizontal Grid Lines -->
+                
                 <line x1="50" y1="90" x2="580" y2="90" class="graph-grid-line" />
                 <line x1="50" y1="160" x2="580" y2="160" class="graph-grid-line" />
                 <line x1="50" y1="230" x2="580" y2="230" class="graph-grid-line" />
                 
-                <!-- Y-Axis Labels (Time behind) -->
+                
                 <text x="10" y="25" fill="var(--text-secondary)" font-size="9">Leader (0s)</text>
                 <text x="15" y="95" fill="var(--text-secondary)" font-size="9">+5m</text>
                 <text x="10" y="165" fill="var(--text-secondary)" font-size="9">+15m</text>
                 <text x="10" y="235" fill="var(--text-secondary)" font-size="9">+30m</text>
                 <text x="10" y="305" fill="var(--text-secondary)" font-size="9">>60m</text>
 
-                <!-- X-Axis Labels (Stages) -->
+                
                 ${Array.from({ length: Math.max(1, currentStageId) }).map((_, idx) => {
                   const x = 50 + (idx / Math.max(1, currentStageId - 1)) * 500;
                   return html`
@@ -1280,7 +1280,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                   `;
                 })}
 
-                <!-- GC Lines -->
+                
                 ${top20GC.map((r, idx) => {
                   if (!selectedGCRiders[r.name]) return null;
                   
@@ -1336,26 +1336,26 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </div>
             </div>
 
-            <!-- SVG White Jersey Gaps Graph -->
+            
             <div style="position: relative;">
               <svg viewBox="0 0 600 350" class="svg-graph">
-                <!-- Grid lines -->
+                
                 <line x1="50" y1="20" x2="50" y2="300" class="graph-axis" />
                 <line x1="50" y1="300" x2="580" y2="300" class="graph-axis" />
                 
-                <!-- Horizontal Grid Lines -->
+                
                 <line x1="50" y1="90" x2="580" y2="90" class="graph-grid-line" />
                 <line x1="50" y1="160" x2="580" y2="160" class="graph-grid-line" />
                 <line x1="50" y1="230" x2="580" y2="230" class="graph-grid-line" />
                 
-                <!-- Y-Axis Labels (Time behind White Jersey Leader) -->
+                
                 <text x="10" y="25" fill="var(--text-secondary)" font-size="9">Leader (0s)</text>
                 <text x="15" y="95" fill="var(--text-secondary)" font-size="9">+2m</text>
                 <text x="15" y="165" fill="var(--text-secondary)" font-size="9">+5m</text>
                 <text x="10" y="235" fill="var(--text-secondary)" font-size="9">+10m</text>
                 <text x="10" y="305" fill="var(--text-secondary)" font-size="9">>20m</text>
 
-                <!-- X-Axis Labels (Stages) -->
+                
                 ${Array.from({ length: Math.max(1, currentStageId) }).map((_, idx) => {
                   const x = 50 + (idx / Math.max(1, currentStageId - 1)) * 500;
                   return html`
@@ -1363,7 +1363,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                   `;
                 })}
 
-                <!-- White Jersey Lines -->
+                
                 ${sortedYoungRiders.map((r, idx) => {
                   if (!selectedWhiteRiders[r.name]) return null;
                   
@@ -1425,31 +1425,31 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </div>
             </div>
 
-            <!-- SVG Altitude Gaps Graph -->
+            
             <div style="position: relative;">
               <svg viewBox="0 0 600 350" class="svg-graph">
-                <!-- Grid lines -->
+                
                 <line x1="50" y1="20" x2="50" y2="300" class="graph-axis" />
                 <line x1="50" y1="300" x2="580" y2="300" class="graph-axis" />
                 
-                <!-- Horizontal Grid Lines -->
+                
                 <line x1="50" y1="30" x2="580" y2="30" class="graph-grid-line" />
                 <line x1="50" y1="120" x2="580" y2="120" class="graph-grid-line" />
                 <line x1="50" y1="210" x2="580" y2="210" class="graph-grid-line" />
                 
-                <!-- Y-Axis Labels (Relative Power) -->
+                
                 <text x="10" y="35" fill="var(--text-secondary)" font-size="9">100% (Sea)</text>
                 <text x="15" y="125" fill="var(--text-secondary)" font-size="9">90%</text>
                 <text x="15" y="215" fill="var(--text-secondary)" font-size="9">80%</text>
                 <text x="15" y="305" fill="var(--text-secondary)" font-size="9">70%</text>
 
-                <!-- X-Axis Labels (Altitude in meters) -->
+                
                 <text x="50" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">0m</text>
                 <text x="238" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">1000m</text>
                 <text x="426" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">2000m</text>
                 <text x="558" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">2700m (Galibier)</text>
 
-                <!-- Altitude Curves -->
+                
                 ${riders.filter(r => ["Tadej Pogačar", "Jonas Vingegaard", "Remco Evenepoel", "Richard Carapaz", "Sepp Kuss", "Mathieu van der Poel", "Jasper Philipsen", "Mads Pedersen"].includes(r.name)).map((r, idx) => {
                   if (selectedAltitudeRiders && !selectedAltitudeRiders[r.name]) return null;
 
@@ -1507,7 +1507,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </div>
             </div>
 
-            <!-- Histogram Calculations -->
+            
             ${(() => {
               const activeRiders = riders.filter(r => r.status === 'Active');
               const stageGaps = activeRiders.map(r => r.stageGapsHistory[histogramStageId] || 0);
@@ -1536,21 +1536,21 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               return html`
                 <div style="position: relative;">
                   <svg viewBox="0 0 600 300" class="svg-graph">
-                    <!-- Axes -->
+                    
                     <line x1="50" y1="20" x2="50" y2="250" class="graph-axis" />
                     <line x1="50" y1="250" x2="580" y2="250" class="graph-axis" />
 
-                    <!-- Horizontal Grid lines -->
+                    
                     <line x1="50" y1="96" x2="580" y2="96" class="graph-grid-line" />
                     <line x1="50" y1="173" x2="580" y2="173" class="graph-grid-line" />
 
-                    <!-- Y-Axis labels (Rider Counts) -->
+                    
                     <text x="15" y="30" fill="var(--text-secondary)" font-size="9">Riders</text>
                     <text x="25" y="99" fill="var(--text-secondary)" font-size="9">${Math.round(maxCount * 0.66)}</text>
                     <text x="25" y="176" fill="var(--text-secondary)" font-size="9">${Math.round(maxCount * 0.33)}</text>
                     <text x="30" y="253" fill="var(--text-secondary)" font-size="9">0</text>
 
-                    <!-- Histogram Bars -->
+                    
                     ${bins.map((bin, idx) => {
                       const barWidth = 60;
                       const gapX = 22;
@@ -1561,7 +1561,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
 
                       return html`
                         <g>
-                          <!-- The Bar -->
+                          
                           <rect 
                             x=${x} 
                             y=${y} 
@@ -1572,7 +1572,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                             opacity="0.85" 
                             style="transition: height 0.5s ease, y 0.5s ease;"
                           />
-                          <!-- Rider count on top -->
+                          
                           ${bin.count > 0 && html`
                             <text 
                               x=${x + barWidth / 2} 
@@ -1585,7 +1585,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                               ${bin.count}
                             </text>
                           `}
-                          <!-- X-Axis Labels -->
+                          
                           <text 
                             x=${x + barWidth / 2} 
                             y="270" 
@@ -1641,31 +1641,31 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </div>
             </div>
 
-            <!-- SVG Climb Overlay -->
+            
             <div style="position: relative;">
               <svg viewBox="0 0 600 350" class="svg-graph">
-                <!-- Axes -->
+                
                 <line x1="50" y1="20" x2="50" y2="250" class="graph-axis" />
                 <line x1="50" y1="250" x2="580" y2="250" class="graph-axis" />
                 
-                <!-- Horizontal Grid Lines -->
+                
                 <line x1="50" y1="30" x2="580" y2="30" class="graph-grid-line" />
                 <line x1="50" y1="120" x2="580" y2="120" class="graph-grid-line" />
                 <line x1="50" y1="210" x2="580" y2="210" class="graph-grid-line" />
                 
-                <!-- Y-Axis Labels (Elevation gained) -->
+                
                 <text x="15" y="35" fill="var(--text-secondary)" font-size="9">1200m</text>
                 <text x="15" y="125" fill="var(--text-secondary)" font-size="9">800m</text>
                 <text x="15" y="215" fill="var(--text-secondary)" font-size="9">400m</text>
                 <text x="20" y="305" fill="var(--text-secondary)" font-size="9">0m</text>
 
-                <!-- X-Axis Labels (Distance along climb in km) -->
+                
                 <text x="50" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">Start (0km)</text>
                 <text x="226" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">5km</text>
                 <text x="403" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">10km</text>
                 <text x="580" y="320" text-anchor="middle" fill="var(--text-secondary)" font-size="9">15km</text>
 
-                <!-- Climb Overlay Paths -->
+                
                 ${(() => {
                   const profiles = {
                     "Gavarnie-Gèdre": { length: 15.0, grade: 7.8, color: getLineColor(3), formula: (x) => (x / 15.0) * (x / 15.0) * 1170 },
@@ -1705,7 +1705,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                           stroke-width="3"
                           fill="none"
                         />
-                        <!-- Label at end of line -->
+                        
                         <text 
                           x=${50 + (p.length / 15.0) * 530 + 5} 
                           y=${250 - (p.formula(p.length) / 1200) * 220 + 3} 
@@ -1733,7 +1733,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </p>
             </div>
 
-            <!-- SVG Treemap Layout -->
+            
             ${(() => {
               // Aggregate all climbs across all 21 stages
               const categoryMap = {
@@ -1784,7 +1784,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                   <svg viewBox="0 0 500 250" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
                     ${rects.map(r => html`
                       <g>
-                        <!-- Rectangle cell -->
+                        
                         <rect 
                           x=${r.x} 
                           y=${r.y} 
@@ -1795,7 +1795,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                           stroke-width="2"
                         />
                         
-                        <!-- Text details -->
+                        
                         ${r.w > 50 && r.h > 40 && html`
                           <g>
                             <text 
@@ -1845,7 +1845,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               </p>
             </div>
 
-            <!-- SVG Sankey Diagram -->
+            
             ${(() => {
               const teamsList = [
                 "Visma | Lease a Bike", "UAE Team Emirates", "Soudal - Quick Step", 
@@ -1908,7 +1908,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                 <div style="position: relative;">
                   <svg viewBox="0 0 600 280" style="width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-secondary);">
                     
-                    <!-- Flow Paths (Links) -->
+                    
                     ${flows.map(f => {
                       const tNode = teamNodes[f.team];
                       const typeNode = typeNodes[f.type];
@@ -1939,7 +1939,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                       `;
                     })}
 
-                    <!-- Left Nodes (Teams) -->
+                    
                     ${teamsList.map(team => {
                       const n = teamNodes[team];
                       const total = teamTotals[team] || 0;
@@ -1964,7 +1964,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                       `;
                     })}
 
-                    <!-- Right Nodes (Stage Types) -->
+                    
                     ${Object.keys(typeNodes).map(type => {
                       const n = typeNodes[type];
                       const total = typeTotals[type] || 0;
@@ -1989,7 +1989,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                     })}
                   </svg>
                   
-                  <!-- Hover tooltip -->
+                  
                   ${hoveredSankeyLink && html`
                     <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: var(--tdf-charcoal); color: #FFFFFF; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.8rem; box-shadow: var(--shadow-md); font-weight: 600;">
                       ${(() => {
@@ -2012,7 +2012,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
           </div>
         `}
 
-        <!-- Points Contest (Maillot Vert) Horizontal Bar Chart -->
+        
         ${activeVisual === 'points' && html`
           <div>
             <h4 class="mb-4">Points Classification (Top 10)</h4>
@@ -2041,7 +2041,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
           </div>
         `}
 
-        <!-- Mountains Contest (Maillot à Pois) Horizontal Bar Chart -->
+        
         ${activeVisual === 'mountains' && html`
           <div>
             <h4 class="mb-4">Mountains Classification (Top 10)</h4>
@@ -2070,7 +2070,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
           </div>
         `}
 
-        <!-- Team Value Scatterplot (Budget vs. Standing) -->
+        
         ${activeVisual === 'scatterplot' && html`
           <div>
             <div class="mb-4">
@@ -2139,11 +2139,11 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               return html`
                 <div style="position: relative;">
                   <svg viewBox="0 0 600 350" class="svg-graph">
-                    <!-- Axes -->
+                    
                     <line x1="60" y1="30" x2="60" y2="300" class="graph-axis" />
                     <line x1="60" y1="300" x2="560" y2="300" class="graph-axis" />
 
-                    <!-- Horizontal Grid lines (Ranks 1 to 10) -->
+                    
                     ${Array.from({ length: 10 }).map((_, idx) => {
                       const y = 30 + (idx / 9) * 250;
                       return html`
@@ -2152,7 +2152,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                       `;
                     })}
 
-                    <!-- X-Axis Labels (Budgets 15M to 65M) -->
+                    
                     ${[15, 25, 35, 45, 55, 65].map(bVal => {
                       const x = 60 + ((bVal - 15) / 50) * 480;
                       return html`
@@ -2163,7 +2163,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
 
                     <text x="310" y="340" text-anchor="middle" fill="var(--text-primary)" font-size="10" font-weight="bold">Estimated Budget (€ Millions)</text>
 
-                    <!-- Scatter Points -->
+                    
                     ${rankedStandings.map(t => {
                       // Map budget to X: 15M to 65M maps to 60 to 540
                       const x = 60 + ((t.budget - 15) / 50) * 480;
@@ -2228,7 +2228,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
           </div>
         `}
 
-        <!-- Jersey Ownership Timeline Ribbon -->
+        
         ${activeVisual === 'ribbon' && html`
           <div>
             <div class="mb-4">
@@ -2293,7 +2293,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
               return html`
                 <div style="overflow-x: auto; padding: 1rem 0;">
                   <div style="min-width: 800px; display: flex; flex-direction: column; gap: 1rem;">
-                    <!-- Stage headers -->
+                    
                     <div style="display: grid; grid-template-columns: 140px repeat(${currentStageId}, 1fr); gap: 6px; text-align: center; font-weight: bold; font-size: 0.8rem;">
                       <div>Classification</div>
                       ${timeline.map(t => html`
@@ -2301,7 +2301,7 @@ function VisualsTab({ riders, top20GC, selectedGCRiders, toggleRiderGCFilter, cu
                       `)}
                     </div>
 
-                    <!-- Jersey Rows -->
+                    
                     ${rows.map(row => html`
                       <div style="display: grid; grid-template-columns: 140px repeat(${currentStageId}, 1fr); gap: 6px; align-items: center; font-size: 0.75rem;">
                         <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
