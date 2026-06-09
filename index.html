@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tour de France 2026 - Interactive Tracker</title>
+  <meta name="description" content="A premium interactive tracking application for the 2026 Tour de France. Visualizing time gaps, classifications, breakaway stats, and routes.">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Mapbox GL JS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+
+  <!-- Tailwind-style simple utility classes for icon fallback -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.17.0/font/lucide.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Server-Side-Rendering Mock / Initial Loading State -->
+    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Outfit', sans-serif; background-color: #F8F9FA;">
+      <div style="background-color: #FFE500; color: #111111; font-weight: 800; padding: 0.5rem 1rem; font-size: 2rem; border-radius: 6px; transform: skewX(-10deg); margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        LE TOUR 2026
+      </div>
+      <div style="font-size: 1rem; color: #6C757D; font-weight: 500;">
+        Loading interactive TDF dashboard...
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script loading Preact/htm directly in browser -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

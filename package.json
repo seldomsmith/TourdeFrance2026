@@ -1,0 +1,17 @@
+{
+  "name": "tdf-2026-tracker",
+  "version": "1.0.0",
+  "description": "Tour de France 2026 Interactive Tracker and Live Web Scraper Sync",
+  "main": "codespace_backend/server.js",
+  "scripts": {
+    "install-all": "npm install && npm --prefix codespace_backend install",
+    "dev": "concurrently \"npm run start-backend\" \"npm run start-frontend\"",
+    "start-backend": "node codespace_backend/server.js",
+    "start-frontend": "sirv . --port 5000 --dev --cors",
+    "start": "node codespace_backend/server.js"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "sirv-cli": "^2.0.2"
+  }
+}
