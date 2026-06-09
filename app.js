@@ -989,10 +989,6 @@ function RidersTab({ riders, leaders }) {
           </div>
         </div>
       `}
-    </div>
-  `;
-}
-
       <!-- Chronological DNF Wall -->
       <div class="dashboard-card" style="margin-top: 3rem; border-top: 4px solid var(--jersey-polka)">
         <div class="card-header" style="border-bottom: none; margin-bottom: 0.5rem;">
