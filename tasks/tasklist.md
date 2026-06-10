@@ -61,10 +61,17 @@
 - [x] Verify local database writes, page sessions, and user transitions
 
 ## Phase 8: 3D Mapbox Terrain Route Visualizer
-- [ ] Implement Mapbox GL map initialization hook in `app.js` OverviewTab
-- [ ] Add 3D terrain DEM terrain source, sky, and exaggeration loading
-- [ ] Build GeoJSON route rendering layers for completed, active, and upcoming stages
-- [ ] Render 3D custom markers for Stage Starts, Finishes, and Summit Peaks
-- [ ] Build map controls toolbar: Pitch/Bearing sliders, 3D Horizon Preset, and Fullscreen toggle
-- [ ] Connect stage nodes clicking to trigger map flyTo transitions and open stage details
-- [ ] Validate Mapbox loading, local storage token overrides, and mobile responsive controls
+- [x] Implement Mapbox GL map initialization hook in `app.js` OverviewTab
+- [x] Add 3D terrain DEM terrain source, sky, and exaggeration loading
+- [x] Build GeoJSON route rendering layers for completed, active, and upcoming stages
+- [x] Render 3D custom markers for Stage Starts, Finishes, and Summit Peaks
+- [x] Build map controls toolbar: Pitch/Bearing sliders, 3D Horizon Preset, and Fullscreen toggle
+- [x] Connect stage nodes clicking to trigger map flyTo transitions and open stage details
+- [x] Validate Mapbox loading, local storage token overrides, and mobile responsive controls
+
+## Phase 9: Breakaway Composition Sankey Flow
+- [x] Build dynamic flow calculations separating rider specializations in breakaways
+- [x] Construct custom SVG nodes and S-curve bezier path links representing flow streams
+- [x] Implement path hover listeners, tooltip info updates, and highlight states
+- [x] Integrate Sankey Flow card at the bottom of the Breakaway Tab
+- [x] Verify chart rendering, responsive heights, and hover details on Port 5000

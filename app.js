@@ -1352,6 +1352,8 @@ function RidersTab({ riders, leaders }) {
 
 // BREAKAWAY TAB
 function BreakawayTab({ riders }) {
+  const [hoveredFlow, setHoveredFlow] = useState(null);
+
   // Sort riders by combativeKms
   const combativeRiders = useMemo(() => {
     return [...riders].sort((a, b) => b.combativeKms - a.combativeKms).slice(0, 10);
@@ -1361,6 +1363,90 @@ function BreakawayTab({ riders }) {
   const breakawayStages = useMemo(() => {
     return [...STAGES].sort((a, b) => b.breakawayRating - a.breakawayRating).slice(0, 5);
   }, []);
+
+  // Compute dynamic Sankey flow data based on current simulated rider breakaway stats
+  const stats = useMemo(() => {
+    let sprinter = 0, climber = 0, gc = 0, specialist = 0;
+    riders.forEach(r => {
+      const breaks = r.stagesInBreak || 0;
+      if (r.type === 'sprinter') sprinter += breaks;
+      else if (r.type === 'clinger') climber += breaks;
+      else if (r.type === 'gc') gc += breaks;
+      else if (r.type === 'breakaway') specialist += breaks;
+    });
+
+    // Fallback counts for pre-race/starting views
+    if (sprinter === 0 && climber === 0 && gc === 0 && specialist === 0) {
+      sprinter = 6;
+      climber = 12;
+      gc = 8;
+      specialist = 18;
+    }
+
+    const total = sprinter + climber + gc + specialist;
+
+    // Split flows into stage outcomes
+    const flows = {
+      sprinter: {
+        caught: Math.round(sprinter * 0.80),
+        dropped: Math.round(sprinter * 0.15),
+        contested: Math.round(sprinter * 0.05)
+      },
+      climber: {
+        caught: Math.round(climber * 0.30),
+        dropped: Math.round(climber * 0.20),
+        contested: Math.round(climber * 0.50)
+      },
+      gc: {
+        caught: Math.round(gc * 0.70),
+        dropped: Math.round(gc * 0.05),
+        contested: Math.round(gc * 0.25)
+      },
+      specialist: {
+        caught: Math.round(specialist * 0.40),
+        dropped: Math.round(specialist * 0.10),
+        contested: Math.round(specialist * 0.50)
+      }
+    };
+
+    const caughtTotal = flows.sprinter.caught + flows.climber.caught + flows.gc.caught + flows.specialist.caught;
+    const droppedTotal = flows.sprinter.dropped + flows.climber.dropped + flows.gc.dropped + flows.specialist.dropped;
+    const contestedTotal = flows.sprinter.contested + flows.climber.contested + flows.gc.contested + flows.specialist.contested;
+
+    return {
+      sprinter, climber, gc, specialist, total,
+      caughtTotal, droppedTotal, contestedTotal,
+      flows
+    };
+  }, [riders]);
+
+  // Dynamic coordinates calculation to stack flows neatly at the center node
+  const scale = 70 / (stats.total || 1);
+  const yMidBase = 150 + (80 - stats.total * scale) / 2;
+
+  const wSprinter = stats.sprinter * scale;
+  const wClimber = stats.climber * scale;
+  const wGc = stats.gc * scale;
+  const wSpecialist = stats.specialist * scale;
+
+  const ySprinterMid = yMidBase + wSprinter / 2;
+  const yClimberMid = yMidBase + wSprinter + wClimber / 2;
+  const yGcMid = yMidBase + wSprinter + wClimber + wGc / 2;
+  const ySpecialistMid = yMidBase + wSprinter + wClimber + wGc + wSpecialist / 2;
+
+  const wCaught = stats.caughtTotal * scale;
+  const wDropped = stats.droppedTotal * scale;
+  const wContested = stats.contestedTotal * scale;
+
+  const yCaughtMid = yMidBase + wCaught / 2;
+  const yDroppedMid = yMidBase + wCaught + wDropped / 2;
+  const yContestedMid = yMidBase + wCaught + wDropped + wContested / 2;
+
+  // Cubic Bezier curve path helper
+  const drawSankeyPath = (x1, y1, x2, y2) => {
+    const dx = Math.abs(x2 - x1) / 2;
+    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+  };
 
   return html`
     <div class="breakaway-grid">
@@ -1386,7 +1472,7 @@ function BreakawayTab({ riders }) {
                 <div>
                   <strong>${r.combativeKms} km</strong>
                   <div class="progress-bar-outer mt-1">
-                    <div class="progress-bar-inner" style="width: ${Math.min(100, (r.combativeKms / 800) * 100)}%;"></div>
+                     <div class="progress-bar-inner" style="width: ${Math.min(100, (r.combativeKms / 800) * 100)}%;"></div>
                   </div>
                 </div>
               </div>
@@ -1416,6 +1502,270 @@ function BreakawayTab({ riders }) {
           `)}
         </div>
       </div>
+
+      
+      <div class="dashboard-card" style="grid-column: 1 / -1; margin-top: 1rem; min-height: 480px;">
+        <div class="card-header" style="border-bottom: none; margin-bottom: 0;">
+          <h3 class="card-title"><i class="lucide-shuffle"></i> Breakaway Composition Sankey Flow</h3>
+        </div>
+        <p class="mb-4" style="color: var(--text-secondary); font-size: 0.85rem;">
+          Visualizing how riders of different specializations enter breakaways and their final outcomes (caught, contested, or dropped). Hover over paths for details.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 2rem;">
+          <div style="position: relative;">
+            <svg viewBox="0 0 800 380" style="width: 100%; height: auto; overflow: visible;">
+              
+              
+              <defs>
+                <linearGradient id="flow-sprinter" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="#FFE500" stop-opacity="0.3" />
+                </linearGradient>
+                <linearGradient id="flow-climber" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#EF4444" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="#FFE500" stop-opacity="0.3" />
+                </linearGradient>
+                <linearGradient id="flow-gc" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="#FFE500" stop-opacity="0.3" />
+                </linearGradient>
+                <linearGradient id="flow-spec" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#10B981" stop-opacity="0.2" />
+                  <stop offset="100%" stop-color="#FFE500" stop-opacity="0.3" />
+                </linearGradient>
+
+                <linearGradient id="flow-caught" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#FFE500" stop-opacity="0.3" />
+                  <stop offset="100%" stop-color="#9CA3AF" stop-opacity="0.2" />
+                </linearGradient>
+                <linearGradient id="flow-dropped" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#FFE500" stop-opacity="0.3" />
+                  <stop offset="100%" stop-color="#EF4444" stop-opacity="0.2" />
+                </linearGradient>
+                <linearGradient id="flow-contested" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#FFE500" stop-opacity="0.3" />
+                  <stop offset="100%" stop-color="#10B981" stop-opacity="0.2" />
+                </linearGradient>
+              </defs>
+
+              
+              
+              
+              <path 
+                d=${drawSankeyPath(190, 45, 330, ySprinterMid)} 
+                fill="none" 
+                stroke="url(#flow-sprinter)" 
+                stroke-width=${Math.max(1.5, wSprinter)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'sprinter' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('sprinter')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+              <path 
+                d=${drawSankeyPath(190, 135, 330, yClimberMid)} 
+                fill="none" 
+                stroke="url(#flow-climber)" 
+                stroke-width=${Math.max(1.5, wClimber)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'climber' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('climber')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+              <path 
+                d=${drawSankeyPath(190, 225, 330, yGcMid)} 
+                fill="none" 
+                stroke="url(#flow-gc)" 
+                stroke-width=${Math.max(1.5, wGc)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'gc' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('gc')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+              <path 
+                d=${drawSankeyPath(190, 315, 330, ySpecialistMid)} 
+                fill="none" 
+                stroke="url(#flow-spec)" 
+                stroke-width=${Math.max(1.5, wSpecialist)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'spec' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('spec')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+
+              
+              
+              <path 
+                d=${drawSankeyPath(470, yCaughtMid, 610, 70)} 
+                fill="none" 
+                stroke="url(#flow-caught)" 
+                stroke-width=${Math.max(1.5, wCaught)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'caught' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('caught')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+              <path 
+                d=${drawSankeyPath(470, yDroppedMid, 610, 180)} 
+                fill="none" 
+                stroke="url(#flow-dropped)" 
+                stroke-width=${Math.max(1.5, wDropped)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'dropped' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('dropped')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+              <path 
+                d=${drawSankeyPath(470, yContestedMid, 610, 290)} 
+                fill="none" 
+                stroke="url(#flow-contested)" 
+                stroke-width=${Math.max(1.5, wContested)} 
+                style="cursor: pointer; transition: stroke-opacity 0.2s;"
+                stroke-opacity=${hoveredFlow === 'contested' ? 1.0 : 0.6}
+                onMouseEnter=${() => setHoveredFlow('contested')}
+                onMouseLeave=${() => setHoveredFlow(null)}
+              />
+
+              
+              
+              
+              
+              <g>
+                <rect x="50" y="20" width="140" height="50" rx="8" fill="var(--bg-secondary)" stroke="#3B82F6" stroke-width="2" />
+                <text x="120" y="44" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Sprinters</text>
+                <text x="120" y="58" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.sprinter} breaks</text>
+              </g>
+
+              <g>
+                <rect x="50" y="110" width="140" height="50" rx="8" fill="var(--bg-secondary)" stroke="#EF4444" stroke-width="2" />
+                <text x="120" y="134" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Climbers</text>
+                <text x="120" y="148" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.climber} breaks</text>
+              </g>
+
+              <g>
+                <rect x="50" y="200" width="140" height="50" rx="8" fill="var(--bg-secondary)" stroke="#F59E0B" stroke-width="2" />
+                <text x="120" y="224" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">GC Contenders</text>
+                <text x="120" y="238" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.gc} breaks</text>
+              </g>
+
+              <g>
+                <rect x="50" y="290" width="140" height="50" rx="8" fill="var(--bg-secondary)" stroke="#10B981" stroke-width="2" />
+                <text x="120" y="314" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Breakaway Spec.</text>
+                <text x="120" y="328" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.specialist} breaks</text>
+              </g>
+
+              
+              <g>
+                <rect x="330" y="150" width="140" height="80" rx="12" fill="var(--bg-secondary)" stroke="var(--tdf-yellow)" stroke-width="3" style="filter: drop-shadow(0px 4px 10px rgba(255,229,0,0.15));" />
+                <text x="400" y="185" text-anchor="middle" font-weight="800" font-size="14" fill="var(--text-primary)" font-family="var(--font-display)">Breakaway Group</text>
+                <text x="400" y="205" text-anchor="middle" font-weight="700" font-size="12" fill="var(--tdf-yellow-hover)">${stats.total} total escapes</text>
+              </g>
+
+              
+              <g>
+                <rect x="610" y="40" width="140" height="60" rx="8" fill="var(--bg-secondary)" stroke="#9CA3AF" stroke-width="2" />
+                <text x="680" y="68" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Caught by Peloton</text>
+                <text x="680" y="84" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.caughtTotal} times (${Math.round((stats.caughtTotal / stats.total) * 100)}%)</text>
+              </g>
+
+              <g>
+                <rect x="610" y="150" width="140" height="60" rx="8" fill="var(--bg-secondary)" stroke="#EF4444" stroke-width="2" />
+                <text x="680" y="178" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Dropped / Out</text>
+                <text x="680" y="194" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.droppedTotal} times (${Math.round((stats.droppedTotal / stats.total) * 100)}%)</text>
+              </g>
+
+              <g>
+                <rect x="610" y="260" width="140" height="60" rx="8" fill="var(--bg-secondary)" stroke="#10B981" stroke-width="2" />
+                <text x="680" y="288" text-anchor="middle" font-weight="700" font-size="12" fill="var(--text-primary)" font-family="var(--font-display)">Stage Contested</text>
+                <text x="680" y="304" text-anchor="middle" font-size="10" fill="var(--text-secondary)">${stats.contestedTotal} times (${Math.round((stats.contestedTotal / stats.total) * 100)}%)</text>
+              </g>
+            </svg>
+          </div>
+
+          
+          <div style="background-color: var(--bg-tertiary); padding: 1.25rem; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center; min-height: 250px;">
+            <h4 style="font-family: var(--font-display); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+              <i class="lucide-info"></i> Flow Analytics
+            </h4>
+            
+            ${!hoveredFlow ? html`
+              <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                Hover over any curve or path to isolate the breakaway flow trajectory and view classification breakdown statistics.
+              </p>
+            ` : hoveredFlow === 'sprinter' ? html`
+              <div>
+                <h5 style="color: #3B82F6; font-weight: 700; font-size: 1rem;">Sprinters Escapes</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  Sprinters escaped <strong>${stats.sprinter}</strong> times, typically hunting intermediate points before folding back:
+                </p>
+                <ul class="mt-2" style="font-size: 0.8rem; list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                  <li>🐢 Re-absorbed: <strong>80%</strong> (${stats.flows.sprinter.caught} times)</li>
+                  <li>💥 Dropped: <strong>15%</strong> (${stats.flows.sprinter.dropped} times)</li>
+                  <li>🏆 Contested win: <strong>5%</strong> (${stats.flows.sprinter.contested} times)</li>
+                </ul>
+              </div>
+            ` : hoveredFlow === 'climber' ? html`
+              <div>
+                <h5 style="color: #EF4444; font-weight: 700; font-size: 1rem;">Climbers Escapes</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  Mountain specialists escaped <strong>${stats.climber}</strong> times, heavily contesting summit finishes:
+                </p>
+                <ul class="mt-2" style="font-size: 0.8rem; list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                  <li>🏆 Contested win: <strong>50%</strong> (${stats.flows.climber.contested} times)</li>
+                  <li>🐢 Re-absorbed: <strong>30%</strong> (${stats.flows.climber.caught} times)</li>
+                  <li>💥 Dropped: <strong>20%</strong> (${stats.flows.climber.dropped} times)</li>
+                </ul>
+              </div>
+            ` : hoveredFlow === 'gc' ? html`
+              <div>
+                <h5 style="color: #F59E0B; font-weight: 700; font-size: 1rem;">GC Contenders Escapes</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  General Classification riders entered breakaways <strong>${stats.gc}</strong> times to force moves or pressure rivals:
+                </p>
+                <ul class="mt-2" style="font-size: 0.8rem; list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                  <li>🐢 Re-absorbed: <strong>70%</strong> (${stats.flows.gc.caught} times)</li>
+                  <li>🏆 Contested win: <strong>25%</strong> (${stats.flows.gc.contested} times)</li>
+                  <li>💥 Dropped: <strong>5%</strong> (${stats.flows.gc.dropped} times)</li>
+                </ul>
+              </div>
+            ` : hoveredFlow === 'spec' ? html`
+              <div>
+                <h5 style="color: #10B981; font-weight: 700; font-size: 1rem;">Specialist Escapes</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  Breakaway experts went up the road <strong>${stats.specialist}</strong> times, presenting the highest escape survival rating:
+                </p>
+                <ul class="mt-2" style="font-size: 0.8rem; list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                  <li>🏆 Contested win: <strong>50%</strong> (${stats.flows.specialist.contested} times)</li>
+                  <li>🐢 Re-absorbed: <strong>40%</strong> (${stats.flows.specialist.caught} times)</li>
+                  <li>💥 Dropped: <strong>10%</strong> (${stats.flows.specialist.dropped} times)</li>
+                </ul>
+              </div>
+            ` : hoveredFlow === 'caught' ? html`
+              <div>
+                <h5 style="color: #9CA3AF; font-weight: 700; font-size: 1rem;">Caught by Peloton</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  A total of <strong>${stats.caughtTotal}</strong> escapes were caught before the line. Highly organized sprinter teams and GC pacesetters re-absorbed these moves.
+                </p>
+              </div>
+            ` : hoveredFlow === 'dropped' ? html`
+              <div>
+                <h5 style="color: #EF4444; font-weight: 700; font-size: 1rem;">Dropped from Break</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  A total of <strong>${stats.droppedTotal}</strong> riders were dropped from active breakaways, succumbing to the fierce pace on the mountain passes.
+                </p>
+              </div>
+            ` : html`
+              <div>
+                <h5 style="color: #10B981; font-weight: 700; font-size: 1rem;">Contesting Stage Victory</h5>
+                <p class="mt-2" style="font-size: 0.85rem; line-height: 1.4;">
+                  A total of <strong>${stats.contestedTotal}</strong> escapes survived to contest the stage win in a final sprint or solo mountain victory!
+                </p>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+
     </div>
   `;
 }
