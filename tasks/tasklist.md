@@ -75,3 +75,11 @@
 - [x] Implement path hover listeners, tooltip info updates, and highlight states
 - [x] Integrate Sankey Flow card at the bottom of the Breakaway Tab
 - [x] Verify chart rendering, responsive heights, and hover details on Port 5000
+
+## Phase 10: Rider & Team Roster Updates
+- [x] Update team names to official 2026 sponsors in data.js
+- [x] Update rider rosters for Visma, UAE, Soudal-QuickStep, and Red Bull-Bora in data.js
+- [x] Sync codespace_backend/scraper.js names with new rosters
+- [x] Update app.js references to rider names in charts, values, and search defaults
+- [x] Verify the application simulates and displays the updated roster list correctly
+

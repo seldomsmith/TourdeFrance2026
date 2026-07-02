@@ -8,12 +8,12 @@ const DATA_FILE = path.join(__dirname, 'live_data.json');
 
 // List of official rider names in our client database to match scraped names accurately
 const OFFICIAL_RIDERS = [
-  "Jonas Vingegaard", "Matteo Jorgenson", "Sepp Kuss", "Christophe Laporte", "Tiesj Benoot", "Wilco Kelderman",
-  "Tadej Pogačar", "Adam Yates", "João Almeida", "Juan Ayuso", "Marc Soler", "Pavel Sivakov",
-  "Remco Evenepoel", "Mikel Landa", "Ilan Van Wilder", "Yves Lampaert", "Gianni Moscon", "Louis Vervaeke",
-  "Primož Roglič", "Jai Hindley", "Aleksandr Vlasov", "Daniel Martínez", "Nico Denz", "Danny van Poppel",
+  "Jonas Vingegaard", "Matteo Jorgenson", "Sepp Kuss", "Victor Campenaerts", "Bruno Armirail", "Davide Piganzoli",
+  "Tadej Pogačar", "Adam Yates", "Isaac del Toro", "Brandon McNulty", "Nils Politt", "Tim Wellens",
+  "Tim Merlier", "Mikel Landa", "Valentin Paret-Peintre", "Ilan Van Wilder", "Jasper Stuyven", "Dylan van Baarle",
+  "Remco Evenepoel", "Florian Lipowitz", "Jai Hindley", "Nico Denz", "Jan Tratnik", "Maxim Van Gils",
   "Carlos Rodríguez", "Tom Pidcock", "Geraint Thomas", "Egan Bernal", "Michał Kwiatkowski", "Laurens De Plus",
-  "Mads Pedersen", "Mattias Skjelmose", "Tao Geoghegan Hart", "Giulio Ciccone", "Toms Skujiņš", "Jasper Stuyven",
+  "Mads Pedersen", "Mattias Skjelmose", "Tao Geoghegan Hart", "Giulio Ciccone", "Toms Skujiņš", "Jonathan Milan",
   "Mathieu van der Poel", "Jasper Philipsen", "Kaden Groves", "Quintin Hermans", "Silvan Dillier", "Axel Laurance",
   "Richard Carapaz", "Ben Healy", "Neilson Powless", "Rui Costa", "Marijn van den Berg", "Stefan Bissegger",
   "Ben O'Connor", "Felix Gall", "Lenny Martinez", "Sam Bennett", "Victor Lafay", "Nans Peters",

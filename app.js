@@ -3022,15 +3022,18 @@ const getRiderPrice = (name) => {
   const prices = {
     "Tadej Pogačar": 40.0,
     "Jonas Vingegaard": 38.0,
-    "Remco Evenepoel": 32.0,
-    "Primož Roglič": 30.0,
+    "Remco Evenepoel": 34.0,
     "Matteo Jorgenson": 22.0,
     "Richard Carapaz": 20.0,
     "Jasper Philipsen": 18.0,
+    "Tim Merlier": 18.0,
+    "Jonathan Milan": 18.0,
     "Mads Pedersen": 16.0,
     "Mathieu van der Poel": 15.0,
     "Sepp Kuss": 12.0,
     "Adam Yates": 12.0,
+    "Isaac del Toro": 12.0,
+    "Florian Lipowitz": 12.0,
     "Tom Pidcock": 10.0,
     "Ben Healy": 9.0
   };

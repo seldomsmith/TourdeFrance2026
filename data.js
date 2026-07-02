@@ -304,22 +304,22 @@ export const INITIAL_TEAMS = [
       { name: "Jonas Vingegaard", age: 29, nationality: "DEN", type: "gc", isYoung: false },
       { name: "Matteo Jorgenson", age: 26, nationality: "USA", type: "gc", isYoung: false },
       { name: "Sepp Kuss", age: 31, nationality: "USA", type: "gc", isYoung: false },
-      { name: "Christophe Laporte", age: 33, nationality: "FRA", type: "sprinter", isYoung: false },
-      { name: "Tiesj Benoot", age: 32, nationality: "BEL", type: "breakaway", isYoung: false },
-      { name: "Wilco Kelderman", age: 35, nationality: "NED", type: "clinger", isYoung: false }
+      { name: "Victor Campenaerts", age: 34, nationality: "BEL", type: "breakaway", isYoung: false },
+      { name: "Bruno Armirail", age: 32, nationality: "FRA", type: "clinger", isYoung: false },
+      { name: "Davide Piganzoli", age: 23, nationality: "ITA", type: "gc", isYoung: true }
     ]
   },
   {
     id: 2,
-    name: "UAE Team Emirates",
+    name: "UAE Team Emirates XRG",
     shortName: "UAD",
     riders: [
       { name: "Tadej Pogačar", age: 27, nationality: "SLO", type: "gc", isYoung: false },
       { name: "Adam Yates", age: 33, nationality: "GBR", type: "gc", isYoung: false },
-      { name: "João Almeida", age: 27, nationality: "POR", type: "gc", isYoung: false },
-      { name: "Juan Ayuso", age: 23, nationality: "ESP", type: "gc", isYoung: true },
-      { name: "Marc Soler", age: 32, nationality: "ESP", type: "breakaway", isYoung: false },
-      { name: "Pavel Sivakov", age: 28, nationality: "FRA", type: "clinger", isYoung: false }
+      { name: "Isaac del Toro", age: 22, nationality: "MEX", type: "gc", isYoung: true },
+      { name: "Brandon McNulty", age: 28, nationality: "USA", type: "gc", isYoung: false },
+      { name: "Nils Politt", age: 32, nationality: "GER", type: "flat", isYoung: false },
+      { name: "Tim Wellens", age: 35, nationality: "BEL", type: "breakaway", isYoung: false }
     ]
   },
   {
@@ -327,12 +327,12 @@ export const INITIAL_TEAMS = [
     name: "Soudal - Quick Step",
     shortName: "SOQ",
     riders: [
-      { name: "Remco Evenepoel", age: 26, nationality: "BEL", type: "gc", isYoung: false }, // turn 26 in 2026, not eligible
+      { name: "Tim Merlier", age: 33, nationality: "BEL", type: "sprinter", isYoung: false },
       { name: "Mikel Landa", age: 36, nationality: "ESP", type: "clinger", isYoung: false },
+      { name: "Valentin Paret-Peintre", age: 25, nationality: "FRA", type: "clinger", isYoung: true },
       { name: "Ilan Van Wilder", age: 25, nationality: "BEL", type: "gc", isYoung: true },
-      { name: "Yves Lampaert", age: 35, nationality: "BEL", type: "flat", isYoung: false },
-      { name: "Gianni Moscon", age: 32, nationality: "ITA", type: "breakaway", isYoung: false },
-      { name: "Louis Vervaeke", age: 32, nationality: "BEL", type: "clinger", isYoung: false }
+      { name: "Jasper Stuyven", age: 34, nationality: "BEL", type: "sprinter", isYoung: false },
+      { name: "Dylan van Baarle", age: 34, nationality: "NED", type: "flat", isYoung: false }
     ]
   },
   {
@@ -340,17 +340,17 @@ export const INITIAL_TEAMS = [
     name: "Red Bull - Bora - Hansgrohe",
     shortName: "RBH",
     riders: [
-      { name: "Primož Roglič", age: 36, nationality: "SLO", type: "gc", isYoung: false },
+      { name: "Remco Evenepoel", age: 26, nationality: "BEL", type: "gc", isYoung: false },
+      { name: "Florian Lipowitz", age: 25, nationality: "GER", type: "gc", isYoung: true },
       { name: "Jai Hindley", age: 30, nationality: "AUS", type: "gc", isYoung: false },
-      { name: "Aleksandr Vlasov", age: 30, nationality: "RUS", type: "gc", isYoung: false },
-      { name: "Daniel Martínez", age: 30, nationality: "COL", type: "gc", isYoung: false },
       { name: "Nico Denz", age: 32, nationality: "GER", type: "breakaway", isYoung: false },
-      { name: "Danny van Poppel", age: 32, nationality: "NED", type: "sprinter", isYoung: false }
+      { name: "Jan Tratnik", age: 36, nationality: "SLO", type: "breakaway", isYoung: false },
+      { name: "Maxim Van Gils", age: 26, nationality: "BEL", type: "breakaway", isYoung: false }
     ]
   },
   {
     id: 5,
-    name: "INEOS Grenadiers",
+    name: "Netcompany INEOS",
     shortName: "IGD",
     riders: [
       { name: "Carlos Rodríguez", age: 25, nationality: "ESP", type: "gc", isYoung: true },
@@ -369,14 +369,14 @@ export const INITIAL_TEAMS = [
       { name: "Mads Pedersen", age: 30, nationality: "DEN", type: "sprinter", isYoung: false },
       { name: "Mattias Skjelmose", age: 25, nationality: "DEN", type: "gc", isYoung: true },
       { name: "Tao Geoghegan Hart", age: 31, nationality: "GBR", type: "gc", isYoung: false },
-      { name: "Giulio Ciccone", age: 31, nationality: "clinger", isYoung: false },
+      { name: "Giulio Ciccone", age: 31, nationality: "ITA", type: "clinger", isYoung: false },
       { name: "Toms Skujiņš", age: 34, nationality: "LAT", type: "breakaway", isYoung: false },
-      { name: "Jasper Stuyven", age: 34, nationality: "BEL", type: "sprinter", isYoung: false }
+      { name: "Jonathan Milan", age: 25, nationality: "ITA", type: "sprinter", isYoung: true }
     ]
   },
   {
     id: 7,
-    name: "Alpecin - Deceuninck",
+    name: "Alpecin - Premier Tech",
     shortName: "ADC",
     riders: [
       { name: "Mathieu van der Poel", age: 31, nationality: "NED", type: "breakaway", isYoung: false },
@@ -402,7 +402,7 @@ export const INITIAL_TEAMS = [
   },
   {
     id: 9,
-    name: "Decathlon AG2R La Mondiale",
+    name: "Decathlon CMA CGM",
     shortName: "DAT",
     riders: [
       { name: "Ben O'Connor", age: 30, nationality: "AUS", type: "gc", isYoung: false },
@@ -415,7 +415,7 @@ export const INITIAL_TEAMS = [
   },
   {
     id: 10,
-    name: "Groupama - FDJ",
+    name: "Groupama - FDJ United",
     shortName: "GFC",
     riders: [
       { name: "David Gaudu", age: 29, nationality: "FRA", type: "gc", isYoung: false },
