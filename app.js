@@ -17,11 +17,16 @@ const getApiHost = () => {
 function App() {
   const [theme, setTheme] = useState('light');
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentStageId, setCurrentStageId] = useState(0); // 0 means race hasn't started yet
-  const [selectedStageId, setSelectedStageId] = useState(1);
+  const [currentStageId, setCurrentStageId] = useState(2); // Default to Stage 2 completed
+  const [selectedStageId, setSelectedStageId] = useState(2);
   
   // Database State
-  const [riders, setRiders] = useState(() => initRiderState());
+  const [riders, setRiders] = useState(() => {
+    let state = initRiderState();
+    state = simulateStage(1, state);
+    state = simulateStage(2, state);
+    return state;
+  });
 
   // User Authentication & Session States
   const [currentUser, setCurrentUser] = useState(null);

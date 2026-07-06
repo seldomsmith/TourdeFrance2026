@@ -99,6 +99,13 @@
 - [x] Replace static apiHost definitions with getApiHost() in app.js
 - [x] Verify that frontend successfully syncs with Codespaces API server without errors
 
+## Phase 14: Stage 2 Completed & Mapbox Integration
+- [x] Initialize client-side App state to Stage 2 completed by default
+- [x] Pre-simulate Stage 1 and Stage 2 on startup to populate GC standings, charts, and breakaway diagrams
+- [x] Set user's Mapbox access token as the default fallback in app.js
+- [x] Verify that 3D Terrain Route Map displays correctly and Stage 2 results render on mount
+
+
 
 
 
