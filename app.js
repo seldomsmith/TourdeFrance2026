@@ -72,8 +72,8 @@ function App() {
     const fetchLiveData = async () => {
       setIsSyncing(true);
       setSyncError(null);
+      const apiHost = getApiHost();
       try {
-        const apiHost = getApiHost();
         const res = await fetch(`${apiHost}/api/results`);
         if (!res.ok) throw new Error('API server returned error');
         const data = await res.json();
@@ -241,9 +241,9 @@ function App() {
       
       <main class="main-content">
         
-        <div class="simulator-banner">
+        <div class="tracker-banner">
           <div class="sim-info">
-            <h2>Stage Control Panel ${currentStageId > 0 ? html`<span class="sim-badge">Race Active</span>` : html`<span class="sim-badge">Pre-Race</span>`}</h2>
+            <h2>Real-Time Live Tracker ${currentStageId > 0 ? html`<span class="sim-badge">Race Active</span>` : html`<span class="sim-badge">Pre-Race</span>`}</h2>
             <p>
               ${currentStageId === 0 
                 ? "The Tour hasn't started. The Grand Départ kicks off in Barcelona!" 
@@ -259,19 +259,9 @@ function App() {
               style=${liveSync ? "background-color: var(--jersey-green); border-color: var(--jersey-green); color: #FFFFFF;" : ""}
               onClick=${() => setLiveSync(!liveSync)}
             >
-              <i class="lucide-refresh-cw"></i> ${liveSync ? (isSyncing ? "Syncing..." : "Live Sync: ON") : "Enable Codespace Live Sync"}
+              <i class="lucide-refresh-cw"></i> ${liveSync ? (isSyncing ? "Syncing..." : "Live Sync: ON") : "Enable Live Sync"}
             </button>
 
-            ${!liveSync && currentStageId < 21 && html`
-              <button class="btn-sim" onClick=${handleSimulateStage}>
-                <i class="lucide-play"></i> Simulate Next Stage
-              </button>
-            `}
-            ${currentStageId > 0 && html`
-              <button class="btn-reset" onClick=${handleReset}>
-                Reset Race
-              </button>
-            `}
           </div>
         </div>
 

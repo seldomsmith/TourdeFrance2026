@@ -106,10 +106,17 @@
 - [x] Verify that 3D Terrain Route Map displays correctly and Stage 2 results render on mount
 
 ## Phase 15: Wikipedia 2026 Data Alignment
-- [/] Align all 21 stages in data.js to match the official Wikipedia route
-- [/] Update team rosters and names in data.js and scraper.js to match Wikipedia
-- [/] Update Stage 1 and Stage 2 simulated results to align exactly with Wikipedia standings
-- [/] Verify that classification standings and 3D maps match Wikipedia perfectly
+- [x] Align all 21 stages in data.js to match the official Wikipedia route
+- [x] Update team rosters and names in data.js and scraper.js to match Wikipedia
+- [x] Update Stage 1 and Stage 2 simulated results to align exactly with Wikipedia standings
+- [x] Verify that classification standings and 3D maps match Wikipedia perfectly
+
+## Phase 16: JS Crash Fix & Live Tracker Rebranding
+- [x] Move apiHost variable definition above try block in fetchLiveData
+- [x] Rebrand simulator copy to real-time live tracker terminology in app.js
+- [x] Remove manual simulation and reset buttons from app.js Control Panel
+- [x] Verify page loads successfully without hanging at startup
+
 
 
 
