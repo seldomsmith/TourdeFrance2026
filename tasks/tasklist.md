@@ -88,4 +88,11 @@
 - [x] Verify that missing stages auto-scrape on startup based on the current calendar date
 - [x] Verify results sync successfully from server database to frontend client
 
+## Phase 12: Backend Port Migration to 3001
+- [x] Change default port in codespace_backend/server.js to 3001
+- [x] Update frontend API host default port in app.js to 3001
+- [x] Update port forwarding list in .devcontainer/devcontainer.json to 3001
+- [x] Verify frontend client communicates successfully with backend on port 3001
+
+
 
