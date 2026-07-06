@@ -118,6 +118,49 @@ app.post('/api/scrape/:stageId', async (req, res) => {
   }
 });
 
+// Automated Stage Scraper Scheduler
+async function checkAndAutoScrape() {
+  try {
+    const data = getLiveData();
+    const currentStage = data.currentStage || 0;
+
+    // Tour de France 2026 starts July 4, 2026
+    const startDate = new Date('2026-07-04T00:00:00Z');
+    const now = new Date();
+    
+    const diffTime = now.getTime() - startDate.getTime();
+    if (diffTime < 0) {
+      console.log("[Scheduler] Tour de France 2026 has not started yet.");
+      return;
+    }
+    
+    const calculatedStage = Math.min(21, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
+    
+    if (calculatedStage > currentStage) {
+      console.log(`[Scheduler] Auto-scrape triggered. Catching up from stage ${currentStage + 1} to stage ${calculatedStage}.`);
+      for (let s = currentStage + 1; s <= calculatedStage; s++) {
+        console.log(`[Scheduler] Auto-scraping Stage ${s}...`);
+        const success = await runDailyScraper(s);
+        if (success) {
+          console.log(`[Scheduler] Stage ${s} scraped successfully.`);
+        } else {
+          console.error(`[Scheduler] Failed to auto-scrape Stage ${s}.`);
+          break; // Stop catching up to prevent cascading errors on network failure, retry next cycle
+        }
+      }
+    } else {
+      console.log(`[Scheduler] Standings up to date (Stage ${currentStage}). Next stage check scheduled.`);
+    }
+  } catch (err) {
+    console.error("[Scheduler Error] Failed in auto-scrape routine:", err.message);
+  }
+}
+
+// Run on startup
+setTimeout(checkAndAutoScrape, 5000);
+// Check every 2 hours
+setInterval(checkAndAutoScrape, 2 * 60 * 60 * 1000);
+
 // Serve frontend index.html for undefined routes in production context
 if (process.env.NODE_ENV === 'production' || process.env.PORT) {
   app.get('*', (req, res) => {

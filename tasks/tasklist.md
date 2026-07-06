@@ -83,3 +83,9 @@
 - [x] Update app.js references to rider names in charts, values, and search defaults
 - [x] Verify the application simulates and displays the updated roster list correctly
 
+## Phase 11: Scraper Automation & Daily Live Sync
+- [x] Add date-based auto-scrape scheduler checkAndAutoScrape() in codespace_backend/server.js
+- [x] Verify that missing stages auto-scrape on startup based on the current calendar date
+- [x] Verify results sync successfully from server database to frontend client
+
+
