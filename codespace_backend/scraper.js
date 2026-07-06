@@ -9,15 +9,15 @@ const DATA_FILE = path.join(__dirname, 'live_data.json');
 // List of official rider names in our client database to match scraped names accurately
 const OFFICIAL_RIDERS = [
   "Jonas Vingegaard", "Matteo Jorgenson", "Sepp Kuss", "Victor Campenaerts", "Bruno Armirail", "Davide Piganzoli",
-  "Tadej Pogačar", "Adam Yates", "Isaac del Toro", "Brandon McNulty", "Nils Politt", "Tim Wellens",
-  "Tim Merlier", "Mikel Landa", "Valentin Paret-Peintre", "Ilan Van Wilder", "Jasper Stuyven", "Dylan van Baarle",
+  "Tadej Pogačar", "Isaac del Toro", "Brandon McNulty", "Tim Wellens", "Marc Soler", "Nils Politt",
+  "Tim Merlier", "Mikel Landa", "Valentin Paret-Peintre", "Ilan Van Wilder", "Jasper Stuyven", "Lennert Van Eetvelt",
   "Remco Evenepoel", "Florian Lipowitz", "Jai Hindley", "Nico Denz", "Jan Tratnik", "Maxim Van Gils",
-  "Carlos Rodríguez", "Tom Pidcock", "Geraint Thomas", "Egan Bernal", "Michał Kwiatkowski", "Laurens De Plus",
-  "Mads Pedersen", "Mattias Skjelmose", "Tao Geoghegan Hart", "Giulio Ciccone", "Toms Skujiņš", "Jonathan Milan",
-  "Mathieu van der Poel", "Jasper Philipsen", "Kaden Groves", "Quintin Hermans", "Silvan Dillier", "Axel Laurance",
-  "Richard Carapaz", "Ben Healy", "Neilson Powless", "Rui Costa", "Marijn van den Berg", "Stefan Bissegger",
-  "Ben O'Connor", "Felix Gall", "Lenny Martinez", "Sam Bennett", "Victor Lafay", "Nans Peters",
-  "David Gaudu", "Valentin Madouas", "Romain Grégoire", "Stefan Küng", "Quentin Pacher", "Laurence Pithie"
+  "Carlos Rodríguez", "Geraint Thomas", "Egan Bernal", "Michał Kwiatkowski", "Laurens De Plus", "Josh Tarling",
+  "Mads Pedersen", "Mattias Skjelmose", "Tao Geoghegan Hart", "Juan Ayuso", "Toms Skujiņš", "Mathias Vacek",
+  "Ben O'Connor", "Felix Gall", "Paul Seixas", "Sam Bennett", "Victor Lafay", "Dorian Godon",
+  "Richard Carapaz", "Ben Healy", "Neilson Powless", "Alex Baudin", "Rui Costa", "Stefan Bissegger",
+  "Alex Molenaar", "Jefferson Cepeda", "Orluis Aular", "Joel Nicolau", "Abel Balderstone", "Julen Amezqueta",
+  "Tom Pidcock", "Jannik Steimle", "Matteo Badilatti", "Mark Donovan", "David de la Cruz", "Gianluca Brambilla"
 ];
 
 function normalizeString(str) {

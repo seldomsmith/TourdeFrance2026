@@ -105,6 +105,13 @@
 - [x] Set user's Mapbox access token as the default fallback in app.js
 - [x] Verify that 3D Terrain Route Map displays correctly and Stage 2 results render on mount
 
+## Phase 15: Wikipedia 2026 Data Alignment
+- [/] Align all 21 stages in data.js to match the official Wikipedia route
+- [/] Update team rosters and names in data.js and scraper.js to match Wikipedia
+- [/] Update Stage 1 and Stage 2 simulated results to align exactly with Wikipedia standings
+- [/] Verify that classification standings and 3D maps match Wikipedia perfectly
+
+
 
 
 
