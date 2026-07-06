@@ -5,6 +5,15 @@ import { STAGES, initRiderState, simulateStage, formatGCTime } from './data.js';
 
 const html = htm.bind(h);
 
+const getApiHost = () => {
+  if (window.location.hostname.includes('github.dev')) {
+    return `https://${window.location.hostname.replace('-5000', '-3001')}`;
+  }
+  return window.location.port === '5000' || window.location.hostname === 'localhost' 
+    ? 'http://localhost:3001' 
+    : window.location.origin;
+};
+
 function App() {
   const [theme, setTheme] = useState('light');
   const [activeTab, setActiveTab] = useState('overview');
@@ -25,7 +34,7 @@ function App() {
     }
     const fetchMe = async () => {
       try {
-        const apiHost = window.location.port === '5000' || window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+        const apiHost = getApiHost();
         const res = await fetch(`${apiHost}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${authToken}` }
         });
@@ -59,7 +68,7 @@ function App() {
       setIsSyncing(true);
       setSyncError(null);
       try {
-        const apiHost = window.location.port === '5000' || window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+        const apiHost = getApiHost();
         const res = await fetch(`${apiHost}/api/results`);
         if (!res.ok) throw new Error('API server returned error');
         const data = await res.json();
@@ -96,7 +105,7 @@ function App() {
         }
       } catch (err) {
         console.error(err);
-        setSyncError('Failed to connect to Codespace API server (http://localhost:3001)');
+        setSyncError(`Failed to connect to Codespace API server (${apiHost})`);
       } finally {
         setIsSyncing(false);
       }
@@ -3103,7 +3112,7 @@ function FantasyTab({ currentStageId, riders, leaders, currentUser, setCurrentUs
   const [marketSearch, setMarketSearch] = useState('');
   const [marketClass, setMarketClass] = useState('all');
 
-  const apiHost = window.location.port === '5000' || window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+  const apiHost = getApiHost();
 
   // Listen to stage updates and compute score history
   useEffect(() => {
