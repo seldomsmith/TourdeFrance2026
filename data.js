@@ -653,3 +653,18 @@ export function simulateStage(stageId, riders) {
 
   return riders;
 }
+
+// Convert seconds to readable time format (e.g. "+ 1h 24' 12\"")
+export function formatGCTime(seconds) {
+  if (seconds === 0) return "Yellow Jersey";
+  const absSec = Math.abs(seconds);
+  const hrs = Math.floor(absSec / 3600);
+  const mins = Math.floor((absSec % 3600) / 60);
+  const secs = absSec % 60;
+  
+  let result = "+ ";
+  if (hrs > 0) result += `${hrs}h `;
+  if (mins > 0 || hrs > 0) result += `${mins}' `;
+  result += `${secs}"`;
+  return result;
+}
